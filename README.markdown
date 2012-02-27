@@ -1,0 +1,98 @@
+Description
+===========
+
+This library requires an nginx build with OpenSSL,
+the [ngx_lua module](http://wiki.nginx.org/HttpLuaModule), and [LuaJIT 2.0](http://luajit.org/luajit.html).
+
+Synopsis
+========
+
+    # nginx.conf:
+
+    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;"
+
+    server {
+        location = /test {
+            content_by_lua conf/test.lua;
+        }
+    }
+
+    -- conf/test.lua:
+
+    local resty_sha1 = require "resty.sha1"
+
+    local sha1 = resty_sha1:new()
+    if not sha1 then
+        ngx.say("failed to create the sha1 object")
+        return
+    end
+
+    local ok = sha1:update("hello, ")
+    if not ok then
+        ngx.say("failed to add data")
+        return
+    end
+
+    ok = sha1:update("world")
+    if not ok then
+        ngx.say("failed to add data")
+        return
+    end
+
+    local digest = sha1:final()  -- binary digest
+
+    local hex = require "resty.hex"
+    ngx.say("sha1: ", hex.to_hex(digest))
+        -- output: "sha1: b7e23ec29af22b0b4e41da31e868d57226121c84"
+
+    local resty_md5 = require "resty.md5"
+    local md5 = resty_md5:new()
+    if not md5 then
+        ngx.say("failed to create md5 object")
+        return
+    end
+
+    local ok = md5:update("hel")
+    if not ok then
+        ngx.say("failed to add data")
+        return
+    end
+
+    ok = md5:update("lo")
+    if not ok then
+        ngx.say("failed to add data")
+        return
+    end
+
+    local digest = md5:final()
+
+    local hex = require "resty.hex"
+    ngx.say("md5: ", hex.to_hex(digest))
+        -- yield "md5: 5d41402abc4b2a76b9719d911017c592"
+
+Author
+======
+
+Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>
+
+Copyright and License
+=====================
+
+This module is licensed under the BSD license.
+
+Copyright (C) 2012, by Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+See Also
+========
+* the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
+
