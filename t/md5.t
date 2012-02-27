@@ -2,7 +2,9 @@
 
 use Test::Nginx::Socket;
 
-plan tests => 3 * blocks();
+repeat_each(2);
+
+plan tests => repeat_each() * (3 * blocks());
 
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
