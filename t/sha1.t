@@ -24,12 +24,12 @@ __DATA__
     location /t {
         content_by_lua '
             local resty_sha1 = require "resty.sha1"
-            local hex = require "resty.hex"
+            local str = require "resty.string"
             local sha1 = resty_sha1:new()
             ngx.say(sha1:update("hello"))
             local digest = sha1:final()
             ngx.say(digest == ngx.sha1_bin("hello"))
-            ngx.say("sha1: ", hex.to_hex(digest))
+            ngx.say("sha1: ", str.to_hex(digest))
         ';
     }
 --- request
@@ -49,12 +49,12 @@ sha1: aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d
     location /t {
         content_by_lua '
             local resty_sha1 = require "resty.sha1"
-            local hex = require "resty.hex"
+            local str = require "resty.string"
             local sha1 = resty_sha1:new()
             ngx.say(sha1:update("hel"))
             ngx.say(sha1:update("lo"))
             local digest = sha1:final()
-            ngx.say("sha1: ", hex.to_hex(digest))
+            ngx.say("sha1: ", str.to_hex(digest))
         ';
     }
 --- request
@@ -74,12 +74,12 @@ sha1: aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d
     location /t {
         content_by_lua '
             local resty_sha1 = require "resty.sha1"
-            local hex = require "resty.hex"
+            local str = require "resty.string"
             local sha1 = resty_sha1:new()
             ngx.say(sha1:update(""))
             local digest = sha1:final()
             ngx.say(digest == ngx.sha1_bin(""))
-            ngx.say("sha1: ", hex.to_hex(digest))
+            ngx.say("sha1: ", str.to_hex(digest))
         ';
     }
 --- request

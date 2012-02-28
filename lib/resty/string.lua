@@ -1,4 +1,4 @@
-module("resty.hex", package.seeall)
+module("resty.string", package.seeall)
 
 
 local ffi = require "ffi"
@@ -20,5 +20,12 @@ function to_hex(s)
     local buf = ffi_new("uint8_t[?]", len)
     C.ngx_hex_dump(buf, s, #s)
     return ffi_str(buf, len)
+end
+
+
+-- to prevent use of casual module global variables
+getmetatable(resty.string).__newindex = function (table, key, val)
+    error('attempt to write to undeclared variable "' .. key .. '": '
+            .. debug.traceback())
 end
 

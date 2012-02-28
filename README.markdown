@@ -41,8 +41,8 @@ Synopsis
 
     local digest = sha1:final()  -- binary digest
 
-    local hex = require "resty.hex"
-    ngx.say("sha1: ", hex.to_hex(digest))
+    local str = require "resty.string"
+    ngx.say("sha1: ", str.to_hex(digest))
         -- output: "sha1: b7e23ec29af22b0b4e41da31e868d57226121c84"
 
     local resty_md5 = require "resty.md5"
@@ -66,8 +66,8 @@ Synopsis
 
     local digest = md5:final()
 
-    local hex = require "resty.hex"
-    ngx.say("md5: ", hex.to_hex(digest))
+    local str = require "resty.string"
+    ngx.say("md5: ", str.to_hex(digest))
         -- yield "md5: 5d41402abc4b2a76b9719d911017c592"
 
 Author
