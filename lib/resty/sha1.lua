@@ -30,10 +30,11 @@ int SHA1_Final(unsigned char *md, SHA_CTX *c);
 ]]
 
 local buf = ffi_new("char[20]")
+local ctx_ptr_type = ffi.typeof("SHA_CTX[1]")
 
 
 function new(self)
-    local ctx = ffi_new("SHA_CTX[1]")
+    local ctx = ffi_new(ctx_ptr_type)
     if C.SHA1_Init(ctx) == 0 then
         return nil
     end

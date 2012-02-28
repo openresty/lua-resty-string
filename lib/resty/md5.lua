@@ -31,10 +31,11 @@ int MD5_Final(unsigned char *md, MD5_CTX *c);
 ]]
 
 local buf = ffi_new("char[16]")
+local ctx_ptr_type = ffi.typeof("MD5_CTX[1]")
 
 
 function new(self)
-    local ctx = ffi_new("MD5_CTX[1]")
+    local ctx = ffi_new(ctx_ptr_type)
     if C.MD5_Init(ctx) == 0 then
         return nil
     end

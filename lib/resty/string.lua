@@ -14,10 +14,12 @@ typedef unsigned char u_char;
 u_char * ngx_hex_dump(u_char *dst, const u_char *src, size_t len);
 ]]
 
+local str_type = ffi.typeof("uint8_t[?]")
+
 
 function to_hex(s)
     local len = #s * 2
-    local buf = ffi_new("uint8_t[?]", len)
+    local buf = ffi_new(str_type, len)
     C.ngx_hex_dump(buf, s, #s)
     return ffi_str(buf, len)
 end
