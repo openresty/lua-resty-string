@@ -1,5 +1,6 @@
 module("resty.sha1", package.seeall)
 
+_VERSION = '0.04'
 
 local ffi = require "ffi"
 local ffi_new = ffi.new
