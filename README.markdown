@@ -1,3 +1,8 @@
+Name
+====
+
+lua-resty-string - String utilities and common hash functions for ngx_lua and LuaJIT
+
 Status
 ======
 
