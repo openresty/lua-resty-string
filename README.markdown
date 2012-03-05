@@ -96,6 +96,13 @@ Synopsis
     local digest = sha256:final()
     ngx.say("sha256: ", str.to_hex(digest))
 
+    local resty_sha512 = require "resty.sha512"
+    local str = require "resty.string"
+    local sha512 = resty_sha512:new()
+    ngx.say(sha512:update("hello"))
+    local digest = sha512:final()
+    ngx.say("sha512: ", str.to_hex(digest))
+
 Author
 ======
 
