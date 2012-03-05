@@ -82,6 +82,20 @@ Synopsis
     ngx.say("md5: ", str.to_hex(digest))
         -- yield "md5: 5d41402abc4b2a76b9719d911017c592"
 
+    local resty_sha224 = require "resty.sha224"
+    local str = require "resty.string"
+    local sha224 = resty_sha224:new()
+    ngx.say(sha224:update("hello"))
+    local digest = sha224:final()
+    ngx.say("sha224: ", str.to_hex(digest))
+
+    local resty_sha256 = require "resty.sha256"
+    local str = require "resty.string"
+    local sha256 = resty_sha256:new()
+    ngx.say(sha256:update("hello"))
+    local digest = sha256:final()
+    ngx.say("sha256: ", str.to_hex(digest))
+
 Author
 ======
 
