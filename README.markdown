@@ -110,6 +110,22 @@ Synopsis
     ngx.say(sha384:update("lo"))
     local digest = sha384:final()
     ngx.say("sha384: ", str.to_hex(digest))
+    
+    local resty_random = require "resty.random"
+    local str = require "resty.string"
+    local random = resty_random.bytes(16)
+        -- generate 16 bytes of pseudo-random data
+    ngx.say("pseudo-random: ", str.to_hex(random))
+    
+    local resty_random = require "resty.random"
+    local str = require "resty.string"
+    local strong_random = resty_random.bytes(16,true)
+        -- attempt to generate 16 bytes of
+        -- cryptographically strong random data
+    while strong_random == nil
+        strong_random = resty_random.bytes(16,true)
+    end
+    ngx.say("random: ", str.to_hex(random))
 
 Author
 ======
