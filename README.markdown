@@ -122,10 +122,32 @@ Synopsis
     local strong_random = resty_random.bytes(16,true)
         -- attempt to generate 16 bytes of
         -- cryptographically strong random data
-    while strong_random == nil
+    while strong_random == nil do
         strong_random = resty_random.bytes(16,true)
     end
-    ngx.say("random: ", str.to_hex(random))
+    ngx.say("random: ", str.to_hex(strong_random))
+
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_128_cbc_sha1 = aes:new("AKeyForAES")
+        -- the default cipher is AES 128 CBC with 1 round of SHA-1
+        -- for the key and a nil salt
+    local encrypted = aes_128_cbc_sha1:encrypt("Secret message!")
+    ngx.say("AES 128 CBC (SHA-1) Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES 128 CBC (SHA-1) Decrypted: ", aes_128_cbc_sha1:decrypt(encrypted))
+
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_256_cbc_sha512x5 = aes:new("AKeyForAES-256-CBC",
+        "MySalt!", aes.cipher(256,"cbc"), aes.hash.sha512, 5)
+        -- AES 256 CBC with 5 rounds of SHA-512 for the key
+        -- and a salt of "MySalt!"
+    local encrypted = aes_256_cbc_sha512x5:encrypt("Really secret message!")
+    ngx.say("AES 256 CBC (SHA-512, salted) Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES 256 CBC (SHA-512, salted) Decrypted: ",
+        aes_256_cbc_sha512x5:decrypt(encrypted))
+
+
 
 Author
 ======

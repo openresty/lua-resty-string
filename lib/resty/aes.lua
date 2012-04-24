@@ -93,7 +93,8 @@ hash = {md5 = C.EVP_md5(),
   sha1 = C.EVP_sha1(),
   sha224 = C.EVP_sha224(),
   sha256 = C.EVP_sha256(),
-  sha384 = C.EVP_sha512()
+  sha384 = C.EVP_sha384(),
+  sha512 = C.EVP_sha512()
 }
 
 function cipher(size, _cipher)
