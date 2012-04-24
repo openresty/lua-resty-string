@@ -7,8 +7,6 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
 
-local mt = { __index = resty.sha1 }
-
 ffi.cdef[[
 typedef unsigned char u_char;
 
