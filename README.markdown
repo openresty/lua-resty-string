@@ -129,12 +129,12 @@ Synopsis
 
     local aes = require "resty.aes"
     local str = require "resty.string"
-    local aes_128_cbc_sha1 = aes:new("AKeyForAES")
-        -- the default cipher is AES 128 CBC with 1 round of SHA-1
+    local aes_128_cbc_md5 = aes:new("AKeyForAES")
+        -- the default cipher is AES 128 CBC with 1 round of MD5
         -- for the key and a nil salt
-    local encrypted = aes_128_cbc_sha1:encrypt("Secret message!")
-    ngx.say("AES 128 CBC (SHA-1) Encrypted HEX: ", str.to_hex(encrypted))
-    ngx.say("AES 128 CBC (SHA-1) Decrypted: ", aes_128_cbc_sha1:decrypt(encrypted))
+    local encrypted = aes_128_cbc_md5:encrypt("Secret message!")
+    ngx.say("AES 128 CBC (MD5) Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES 128 CBC (MD5) Decrypted: ", aes_128_cbc_md5:decrypt(encrypted))
 
     local aes = require "resty.aes"
     local str = require "resty.string"

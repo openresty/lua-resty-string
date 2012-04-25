@@ -7,6 +7,7 @@ local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
+local ffi_copy = ffi.copy
 local C = ffi.C
 
 local mt = { __index = resty.aes }
@@ -70,18 +71,13 @@ const EVP_CIPHER *EVP_aes_256_ofb(void);
 
 void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
 int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
-void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
 
-int EVP_EncryptInit(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, const unsigned char *key, const unsigned char *iv);
 int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, ENGINE *impl, unsigned char *key, const unsigned char *iv);
 int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
 int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
-int EVP_EncryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
 
-int EVP_DecryptInit(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, unsigned char *key, const unsigned char *iv);
 int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, ENGINE *impl, unsigned char *key, const unsigned char *iv);
 int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
-int EVP_DecryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 
 int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md, const unsigned char *salt, const unsigned char *data, int datal, int count, unsigned char *key,unsigned char *iv);
@@ -89,7 +85,8 @@ int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md, const unsigned char 
 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
 
-hash = {md5 = C.EVP_md5(),
+hash = {
+  md5 = C.EVP_md5(),
   sha1 = C.EVP_sha1(),
   sha224 = C.EVP_sha224(),
   sha256 = C.EVP_sha256(),
@@ -112,16 +109,39 @@ function new(self, key, salt, _cipher, _hash, hash_rounds)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
-    local _hash = _hash or hash.sha1
-    local hash_rounds = hash_rounds or 5
+    local _hash = _hash or hash.md5
+    local hash_rounds = hash_rounds or 1
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
-    if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
-      hash_rounds, gen_key, gen_iv) ~= _cipherLength then
-        return nil
+    if type(_hash) == "table" then
+        if not _hash.iv or #_hash.iv ~= 16 then
+          return nil
+        end
+
+        if not _hash.method and #key ~= _cipherLength then
+            return nil
+        end
+
+        if _hash.method then
+            local tmp_key = _hash.method(key)
+
+            if #tmp_key ~= _cipherLength then
+                return nil
+            end
+
+            ffi_copy(gen_key, tmp_key, _cipherLength)
+        end
+
+        ffi_copy(gen_iv, _hash.iv, 16)
+    else
+        if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
+          hash_rounds, gen_key, gen_iv) ~= _cipherLength then
+            return nil
+        end
     end
+
 
     C.EVP_CIPHER_CTX_init(encrypt_ctx)
     C.EVP_CIPHER_CTX_init(decrypt_ctx)
@@ -151,11 +171,11 @@ function encrypt(self, s)
     local ctx = self._encrypt_ctx
 
     if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-      return nil
+        return nil
     end
 
     if C.EVP_EncryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-      return nil
+        return nil
     end
 
     if C.EVP_EncryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
