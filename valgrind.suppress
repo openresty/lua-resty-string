@@ -1,5 +1,11 @@
 {
    <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:lj_str_new
+   obj:*
+}
+{
+   <insert_a_suppression_name_here>
    Memcheck:Param
    write(buf)
    fun:__write_nocancel

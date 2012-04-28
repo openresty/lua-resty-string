@@ -13,6 +13,8 @@ ffi.cdef[[
 typedef unsigned char u_char;
 
 u_char * ngx_hex_dump(u_char *dst, const u_char *src, size_t len);
+
+intptr_t ngx_atoi(const unsigned char *line, size_t n);
 ]]
 
 local str_type = ffi.typeof("uint8_t[?]")
@@ -23,6 +25,11 @@ function to_hex(s)
     local buf = ffi_new(str_type, len)
     C.ngx_hex_dump(buf, s, #s)
     return ffi_str(buf, len)
+end
+
+
+function atoi(s)
+    return tonumber(C.ngx_atoi(s, #s))
 end
 
 
