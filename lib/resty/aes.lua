@@ -86,13 +86,14 @@ int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md, const unsigned char 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
 
 hash = {
-  md5 = C.EVP_md5(),
-  sha1 = C.EVP_sha1(),
-  sha224 = C.EVP_sha224(),
-  sha256 = C.EVP_sha256(),
-  sha384 = C.EVP_sha384(),
-  sha512 = C.EVP_sha512()
+    md5 = C.EVP_md5(),
+    sha1 = C.EVP_sha1(),
+    sha224 = C.EVP_sha224(),
+    sha256 = C.EVP_sha256(),
+    sha384 = C.EVP_sha384(),
+    sha512 = C.EVP_sha512()
 }
+
 
 function cipher(size, _cipher)
     local _size = size or 128
@@ -104,6 +105,7 @@ function cipher(size, _cipher)
         return nil
     end
 end
+
 
 function new(self, key, salt, _cipher, _hash, hash_rounds)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
@@ -162,6 +164,7 @@ function new(self, key, salt, _cipher, _hash, hash_rounds)
       }, mt)
 end
 
+
 function encrypt(self, s)
     local s_len = #s
     local max_len = s_len + 16
@@ -185,6 +188,7 @@ function encrypt(self, s)
     return ffi_str(buf, out_len[0] + tmp_len[0])
 end
 
+
 function decrypt(self, s)
     local s_len = #s
     local buf = ffi_new("unsigned char[?]", s_len)
@@ -207,8 +211,10 @@ function decrypt(self, s)
     return ffi_str(buf, out_len[0] + tmp_len[0])
 end
 
+
 -- to prevent use of casual module global variables
 getmetatable(resty.aes).__newindex = function (table, key, val)
     error('attempt to write to undeclared variable "' .. key .. '": '
             .. debug.traceback())
 end
+
