@@ -11,7 +11,7 @@ our $HttpConfig = <<'_EOC_';
     lua_package_cpath 'lib/?.so;;';
 _EOC_
 
-no_long_string();
+#log_level 'warn';
 
 run_tests();
 
@@ -125,7 +125,7 @@ true
             local aes = require "resty.aes"
             local str = require "resty.string"
             local aes_default = aes:new("secret",nil,
-              cipher(256,"ecb"),aes.hash.sha1)
+              aes.cipher(256,"ecb"),aes.hash.sha1)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-256 ECB SHA1: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
@@ -141,6 +141,7 @@ true
 [error]
 
 
+
 === TEST 6: AES-256 ECB SHA1x5 no salt
 --- http_config eval: $::HttpConfig
 --- config
@@ -149,7 +150,7 @@ true
             local aes = require "resty.aes"
             local str = require "resty.string"
             local aes_default = aes:new("secret",nil,
-              cipher(256,"ecb"),aes.hash.sha1,5)
+              aes.cipher(256,"ecb"),aes.hash.sha1,5)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-256 ECB SHA1: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
@@ -159,10 +160,11 @@ true
 --- request
 GET /t
 --- response_body
-AES-256 ECB SHA1: d1a9b6e59b8980e783df223889563bee 
+AES-256 ECB SHA1: d1a9b6e59b8980e783df223889563bee
 true
 --- no_error_log
 [error]
+
 
 
 === TEST 7: AES-128 CBC custom keygen
