@@ -12,6 +12,7 @@ int RAND_bytes(unsigned char *buf, int num);
 int RAND_pseudo_bytes(unsigned char *buf, int num);
 ]]
 
+
 function bytes(len, strong)
     local buf = ffi_new("char[?]", len)
     if strong then
@@ -21,7 +22,7 @@ function bytes(len, strong)
     else
         C.RAND_pseudo_bytes(buf,len)
     end
-    
+
     return ffi_str(buf, len)
 end
 
@@ -30,3 +31,4 @@ getmetatable(resty.random).__newindex = function (table, key, val)
     error('attempt to write to undeclared variable "' .. key .. '": '
             .. debug.traceback())
 end
+
