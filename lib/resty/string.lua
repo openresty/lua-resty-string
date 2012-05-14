@@ -1,6 +1,6 @@
 module("resty.string", package.seeall)
 
-_VERSION = '0.05'
+_VERSION = '0.06'
 
 local ffi = require "ffi"
 local ffi_new = ffi.new

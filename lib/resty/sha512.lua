@@ -1,6 +1,6 @@
 module("resty.sha512", package.seeall)
 
-_VERSION = '0.05'
+_VERSION = '0.06'
 
 local sha = require "resty.sha"
 local ffi = require "ffi"

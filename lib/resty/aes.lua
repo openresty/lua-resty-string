@@ -1,6 +1,6 @@
 module("resty.aes", package.seeall)
 
-_VERSION = '0.05'
+_VERSION = '0.06'
 
 --local asn1 = require "resty.asn1"
 local ffi = require "ffi"
