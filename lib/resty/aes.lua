@@ -72,15 +72,25 @@ const EVP_CIPHER *EVP_aes_256_ofb(void);
 void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
 int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
 
-int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, ENGINE *impl, unsigned char *key, const unsigned char *iv);
-int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
+int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher,
+        ENGINE *impl, unsigned char *key, const unsigned char *iv);
+
+int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
+        const unsigned char *in, int inl);
+
 int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
 
-int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher, ENGINE *impl, unsigned char *key, const unsigned char *iv);
-int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
+int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher,
+        ENGINE *impl, unsigned char *key, const unsigned char *iv);
+
+int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
+        const unsigned char *in, int inl);
+
 int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 
-int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md, const unsigned char *salt, const unsigned char *data, int datal, int count, unsigned char *key,unsigned char *iv);
+int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
+        const unsigned char *salt, const unsigned char *data, int datal,
+        int count, unsigned char *key,unsigned char *iv);
 ]]
 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
