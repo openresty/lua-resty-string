@@ -90,3 +90,29 @@ md5: d41d8cd98f00b204e9800998ecf8427e
 --- no_error_log
 [error]
 
+=== TEST 4: MD5 save context
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resty_md5 = require "resty.md5"
+            local str = require "resty.string"
+            local md5 = resty_md5:new()
+            ngx.say(md5:update("hel"))
+            md5:save_ctx("/tmp/test.ctx")
+
+            local nmd5 = resty_md5:new()
+            nmd5:load_ctx("/tmp/test.ctx")
+            ngx.say(nmd5:update("lo"))
+            local digest = nmd5:final()
+            ngx.say("md5: ", str.to_hex(digest))
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+md5: 5d41402abc4b2a76b9719d911017c592
+--- no_error_log
+[error]

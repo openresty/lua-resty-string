@@ -78,6 +78,20 @@ Synopsis
 
     local digest = md5:final()
 
+    -- save context for break uploading
+    local resty_md5 = require "resty.md5"
+    local str = require "resty.string"
+    local md5 = resty_md5:new()
+    ngx.say(md5:update("hel"))
+    md5:save_ctx("/tmp/test.ctx") 
+    
+    local nmd5 = resty_md5:new()
+    nmd5:load_ctx("/tmp/test.ctx")  -- load context and continue to update
+    ngx.say(nmd5:update("lo"))
+    local digest = nmd5:final()
+    ngx.say("md5: ", str.to_hex(digest))
+
+
     local str = require "resty.string"
     ngx.say("md5: ", str.to_hex(digest))
         -- yield "md5: 5d41402abc4b2a76b9719d911017c592"
