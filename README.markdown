@@ -25,7 +25,7 @@ Synopsis
 
     server {
         location = /test {
-            content_by_lua conf/test.lua;
+            content_by_lua_file conf/test.lua;
         }
     }
 
