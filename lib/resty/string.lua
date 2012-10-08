@@ -38,6 +38,7 @@ function explode(sep, str, limit)
     if not sep or sep == "" then return false end
     if not str then return false end
     limit = limit or 0
+    if limit == 0 or limit == 1 then return {str},1 end
 
     local r = {}
     local n, init = 0, 1
