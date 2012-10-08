@@ -31,6 +31,37 @@ function atoi(s)
 end
 
 
+local strfind = string.find
+local strsub = string.sub
+local strlen = string.len
+function explode(sep, str, limit)
+    if not sep or sep == "" then return false end
+    if not str then return false end
+    limit = limit or 0
+    if limit < 0 then return {} end
+
+    local r = {}
+    local n, init = 0, 1
+
+    while true do
+        local s,e = strfind(str, sep, init, true)
+        if not s then break end
+        r[#r+1] = strsub(str, init, s - 1)
+        init = e + 1
+        n = n + 1
+        if n == limit - 1 then break end
+    end
+
+    if init <= strlen(str) then 
+        r[#r+1] = strsub(str, init) 
+    else 
+        r[#r+1] = "" 
+    end
+
+    return r, n+1
+end
+
+
 -- to prevent use of casual module global variables
 getmetatable(resty.string).__newindex = function (table, key, val)
     error('attempt to write to undeclared variable "' .. key .. '": '
