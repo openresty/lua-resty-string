@@ -34,10 +34,11 @@ end
 local strfind = string.find
 local strsub = string.sub
 local strlen = string.len
+local mhuge = math.huge
 function explode(sep, str, limit)
     if not sep or sep == "" then return false end
     if not str then return false end
-    limit = limit or 0
+    limit = limit or mhuge
     if limit == 0 or limit == 1 then return {str},1 end
 
     local r = {}
