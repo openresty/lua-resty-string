@@ -38,7 +38,6 @@ function explode(sep, str, limit)
     if not sep or sep == "" then return false end
     if not str then return false end
     limit = limit or 0
-    if limit < 0 then return {} end
 
     local r = {}
     local n, init = 0, 1
@@ -57,8 +56,14 @@ function explode(sep, str, limit)
     else 
         r[#r+1] = "" 
     end
+    n = n + 1
 
-    return r, n+1
+    if limit < 0 then
+        for i=n, n + limit + 1, -1 do r[i] = nil end
+        n = n + limit
+    end
+
+    return r, n
 end
 
 
