@@ -5,7 +5,6 @@ _VERSION = '0.01'
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
-local C = ffi.C
 
 ffi.cdef[[
     typedef unsigned char uuid_t[16];
