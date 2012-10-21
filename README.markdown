@@ -148,6 +148,10 @@ Synopsis
         aes_256_cbc_sha512x5:decrypt(encrypted))
 
 
+    -- uuid test
+    local resty_uuid = require "resty.uuid"
+    local uuid = resty_uuid:generate()
+    ngx.say("UUID: ", uuid)
 
 Author
 ======
