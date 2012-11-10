@@ -1,8 +1,13 @@
-module("resty.sha", package.seeall)
+-- Copyright (C) 2012 by Yichun Zhang (agentzh)
+
+
+local ffi = require "ffi"
+
+
+module(...)
 
 _VERSION = '0.06'
 
-local ffi = require "ffi"
 
 ffi.cdef[[
 typedef unsigned long SHA_LONG;

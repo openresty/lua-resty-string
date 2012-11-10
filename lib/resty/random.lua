@@ -1,11 +1,18 @@
-module("resty.random", package.seeall)
+-- Copyright (C) 2012 by Yichun Zhang (agentzh)
 
-_VERSION = '0.06'
 
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
+local setmetatable = setmetatable
+local error = error
+
+
+module(...)
+
+_VERSION = '0.06'
+
 
 ffi.cdef[[
 int RAND_bytes(unsigned char *buf, int num);
@@ -26,9 +33,13 @@ function bytes(len, strong)
     return ffi_str(buf, len)
 end
 
--- to prevent use of casual module global variables
-getmetatable(resty.random).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
-end
+
+local class_mt = {
+    -- to prevent use of casual module global variables
+    __newindex = function (table, key, val)
+        error('attempt to write to undeclared variable "' .. key .. '"')
+    end
+}
+
+setmetatable(_M, class_mt)
 

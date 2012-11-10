@@ -1,14 +1,21 @@
-module("resty.sha1", package.seeall)
+-- Copyright (C) 2012 by Yichun Zhang (agentzh)
 
-_VERSION = '0.06'
 
 local sha = require "resty.sha"
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
+local setmetatable = setmetatable
+local error = error
 
-local mt = { __index = resty.sha1 }
+
+module(...)
+
+_VERSION = '0.06'
+
+
+local mt = { __index = _M }
 
 
 ffi.cdef[[
@@ -60,9 +67,12 @@ function reset(self)
 end
 
 
--- to prevent use of casual module global variables
-getmetatable(resty.sha1).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
-end
+local class_mt = {
+    -- to prevent use of casual module global variables
+    __newindex = function (table, key, val)
+        error('attempt to write to undeclared variable "' .. key .. '"')
+    end
+}
+
+setmetatable(_M, class_mt)
 
