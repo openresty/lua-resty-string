@@ -12,7 +12,7 @@ local tonumber = tonumber
 
 module(...)
 
-_VERSION = '0.06'
+_VERSION = '0.07'
 
 
 ffi.cdef[[
