@@ -196,3 +196,105 @@ true
 --- no_error_log
 [error]
 
+
+
+=== TEST 8: AES-128 CBC custom keygen (without method)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new(ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),nil,
+              aes.cipher(128,"cbc"),
+              {iv = ngx.decode_base64("Jq5cyFTja2vfyjZoSN6muw==")})
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+AES-128 CBC (custom keygen) MD5: 7b47a4dbb11e2cddb2f3740c9e3a552b
+true
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: AES-128 CBC custom keygen (without method, bad key len)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+
+            local aes_default, err = aes:new("hel", nil, aes.cipher(128,"cbc"),
+              {iv = ngx.decode_base64("Jq5cyFTja2vfyjZoSN6muw==")})
+
+            if not aes_default then
+                ngx.say("failed to new: ", err)
+                return
+            end
+
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+failed to new: bad key length
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: AES-128 CBC custom keygen (without method, bad iv)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+
+            local aes_default, err = aes:new(
+                ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),
+                nil,
+                aes.cipher(128,"cbc"),
+                {iv = "hello"}
+            )
+
+            if not aes_default then
+                ngx.say("failed to new: ", err)
+                return
+            end
+
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+failed to new: bad iv
+--- no_error_log
+[error]
+

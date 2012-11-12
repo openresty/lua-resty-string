@@ -137,31 +137,35 @@ function new(self, key, salt, _cipher, _hash, hash_rounds)
 
     if type(_hash) == "table" then
         if not _hash.iv or #_hash.iv ~= 16 then
-          return nil
-        end
-
-        if not _hash.method and #key ~= _cipherLength then
-            return nil
+          return nil, "bad iv"
         end
 
         if _hash.method then
             local tmp_key = _hash.method(key)
 
             if #tmp_key ~= _cipherLength then
-                return nil
+                return nil, "bad key length"
             end
 
             ffi_copy(gen_key, tmp_key, _cipherLength)
+
+        elseif #key ~= _cipherLength then
+            return nil, "bad key length"
+
+        else
+            ffi_copy(gen_key, key, _cipherLength)
         end
 
         ffi_copy(gen_iv, _hash.iv, 16)
+
     else
         if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
-          hash_rounds, gen_key, gen_iv) ~= _cipherLength then
+                            hash_rounds, gen_key, gen_iv)
+            ~= _cipherLength
+        then
             return nil
         end
     end
-
 
     C.EVP_CIPHER_CTX_init(encrypt_ctx)
     C.EVP_CIPHER_CTX_init(decrypt_ctx)
