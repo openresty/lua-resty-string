@@ -15,7 +15,7 @@ local type = type
 
 module(...)
 
-_VERSION = '0.07'
+_VERSION = '0.08'
 
 
 local mt = { __index = _M }
