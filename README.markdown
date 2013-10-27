@@ -19,6 +19,7 @@ the [ngx_lua module](http://wiki.nginx.org/HttpLuaModule), and [LuaJIT 2.0](http
 Synopsis
 ========
 
+```lua
     # nginx.conf:
 
     lua_package_path "/path/to/lua-resty-string/lib/?.lua;;"
@@ -146,8 +147,7 @@ Synopsis
     ngx.say("AES 256 CBC (SHA-512, salted) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 256 CBC (SHA-512, salted) Decrypted: ",
         aes_256_cbc_sha512x5:decrypt(encrypted))
-
-
+```
 
 Author
 ======
