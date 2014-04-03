@@ -9,9 +9,7 @@ local setmetatable = setmetatable
 local error = error
 
 
-module(...)
-
-_VERSION = '0.08'
+local _M = { _VERSION = '0.08' }
 
 local mt = { __index = _M }
 
@@ -41,7 +39,7 @@ local buf = ffi_new("char[16]")
 local ctx_ptr_type = ffi.typeof("MD5_CTX[1]")
 
 
-function new(self)
+function _M.new(self)
     local ctx = ffi_new(ctx_ptr_type)
     if C.MD5_Init(ctx) == 0 then
         return nil
@@ -51,12 +49,12 @@ function new(self)
 end
 
 
-function update(self, s)
+function _M.update(self, s)
     return C.MD5_Update(self._ctx, s, #s) == 1
 end
 
 
-function final(self)
+function _M.final(self)
     if C.MD5_Final(buf, self._ctx) == 1 then
         return ffi_str(buf, 16)
     end
@@ -65,17 +63,10 @@ function final(self)
 end
 
 
-function reset(self)
+function _M.reset(self)
     return C.MD5_Init(self._ctx) == 1
 end
 
 
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-setmetatable(_M, class_mt)
+return _M
 
