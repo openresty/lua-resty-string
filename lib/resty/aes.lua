@@ -13,7 +13,7 @@ local error = error
 local type = type
 
 
-local _M = { _VERSION = '0.08' }
+local _M = { _VERSION = '0.09' }
 
 local mt = { __index = _M }
 

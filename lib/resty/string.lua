@@ -10,7 +10,7 @@ local error = error
 local tonumber = tonumber
 
 
-local _M = { _VERSION = '0.08' }
+local _M = { _VERSION = '0.09' }
 
 
 ffi.cdef[[
