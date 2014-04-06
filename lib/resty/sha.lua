@@ -4,9 +4,7 @@
 local ffi = require "ffi"
 
 
-module(...)
-
-_VERSION = '0.08'
+local _M = { _VERSION = '0.08' }
 
 
 ffi.cdef[[
@@ -18,3 +16,4 @@ enum {
 };
 ]];
 
+return _M

@@ -13,12 +13,10 @@ local error = error
 local type = type
 
 
-module(...)
-
-_VERSION = '0.08'
-
+local _M = { _VERSION = '0.08' }
 
 local mt = { __index = _M }
+
 
 ffi.cdef[[
 typedef struct engine_st ENGINE;
@@ -103,6 +101,7 @@ int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
 
+local hash
 hash = {
     md5 = C.EVP_md5(),
     sha1 = C.EVP_sha1(),
@@ -111,9 +110,10 @@ hash = {
     sha384 = C.EVP_sha384(),
     sha512 = C.EVP_sha512()
 }
+_M.hash = hash
 
-
-function cipher(size, _cipher)
+local cipher
+cipher = function (size, _cipher)
     local _size = size or 128
     local _cipher = _cipher or "cbc"
     local func = "EVP_aes_" .. _size .. "_" .. _cipher
@@ -123,9 +123,9 @@ function cipher(size, _cipher)
         return nil
     end
 end
+_M.cipher = cipher
 
-
-function new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
@@ -187,7 +187,7 @@ function new(self, key, salt, _cipher, _hash, hash_rounds)
 end
 
 
-function encrypt(self, s)
+function _M.encrypt(self, s)
     local s_len = #s
     local max_len = s_len + 16
     local buf = ffi_new("unsigned char[?]", max_len)
@@ -211,7 +211,7 @@ function encrypt(self, s)
 end
 
 
-function decrypt(self, s)
+function _M.decrypt(self, s)
     local s_len = #s
     local buf = ffi_new("unsigned char[?]", s_len)
     local out_len = ffi_new("int[1]")
@@ -234,12 +234,5 @@ function decrypt(self, s)
 end
 
 
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-setmetatable(_M, class_mt)
+return _M
 

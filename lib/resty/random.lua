@@ -9,9 +9,7 @@ local setmetatable = setmetatable
 local error = error
 
 
-module(...)
-
-_VERSION = '0.08'
+local _M = { _VERSION = '0.08' }
 
 
 ffi.cdef[[
@@ -20,7 +18,7 @@ int RAND_pseudo_bytes(unsigned char *buf, int num);
 ]]
 
 
-function bytes(len, strong)
+function _M.bytes(len, strong)
     local buf = ffi_new("char[?]", len)
     if strong then
         if C.RAND_bytes(buf, len) == 0 then
@@ -34,12 +32,5 @@ function bytes(len, strong)
 end
 
 
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-setmetatable(_M, class_mt)
+return _M
 

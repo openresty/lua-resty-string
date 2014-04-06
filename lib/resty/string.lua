@@ -10,9 +10,7 @@ local error = error
 local tonumber = tonumber
 
 
-module(...)
-
-_VERSION = '0.08'
+local _M = { _VERSION = '0.08' }
 
 
 ffi.cdef[[
@@ -26,7 +24,7 @@ intptr_t ngx_atoi(const unsigned char *line, size_t n);
 local str_type = ffi.typeof("uint8_t[?]")
 
 
-function to_hex(s)
+function _M.to_hex(s)
     local len = #s * 2
     local buf = ffi_new(str_type, len)
     C.ngx_hex_dump(buf, s, #s)
@@ -34,17 +32,9 @@ function to_hex(s)
 end
 
 
-function atoi(s)
+function _M.atoi(s)
     return tonumber(C.ngx_atoi(s, #s))
 end
 
 
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-setmetatable(_M, class_mt)
-
+return _M
