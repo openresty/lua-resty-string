@@ -1,4 +1,4 @@
--- Copyright (C) 2012 by Yichun Zhang (agentzh)
+-- Copyright (C) by Yichun Zhang (agentzh)
 
 
 local sha = require "resty.sha"

@@ -1,4 +1,4 @@
--- Copyright (C) 2012 by Yichun Zhang (agentzh)
+-- Copyright (C) by Yichun Zhang (agentzh)
 
 
 --local asn1 = require "resty.asn1"
