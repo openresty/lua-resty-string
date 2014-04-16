@@ -9,7 +9,6 @@ local ffi_str = ffi.string
 local ffi_copy = ffi.copy
 local C = ffi.C
 local setmetatable = setmetatable
-local error = error
 local type = type
 
 
@@ -17,28 +16,13 @@ local _M = { _VERSION = '0.09' }
 
 local mt = { __index = _M }
 
-
 ffi.cdef[[
-const EVP_CIPHER *EVP_aes_128_ecb(void);
-const EVP_CIPHER *EVP_aes_128_cbc(void);
-const EVP_CIPHER *EVP_aes_128_cfb1(void);
-const EVP_CIPHER *EVP_aes_128_cfb8(void);
-const EVP_CIPHER *EVP_aes_128_cfb128(void);
-const EVP_CIPHER *EVP_aes_128_ofb(void);
-const EVP_CIPHER *EVP_aes_128_ctr(void);
-const EVP_CIPHER *EVP_aes_192_ecb(void);
-const EVP_CIPHER *EVP_aes_192_cbc(void);
-const EVP_CIPHER *EVP_aes_192_cfb1(void);
-const EVP_CIPHER *EVP_aes_192_cfb8(void);
-const EVP_CIPHER *EVP_aes_192_cfb128(void);
-const EVP_CIPHER *EVP_aes_192_ofb(void);
-const EVP_CIPHER *EVP_aes_192_ctr(void);
-const EVP_CIPHER *EVP_aes_256_ecb(void);
-const EVP_CIPHER *EVP_aes_256_cbc(void);
-const EVP_CIPHER *EVP_aes_256_cfb1(void);
-const EVP_CIPHER *EVP_aes_256_cfb8(void);
-const EVP_CIPHER *EVP_aes_256_cfb128(void);
-const EVP_CIPHER *EVP_aes_256_ofb(void);
+const EVP_CIPHER *EVP_des_ecb(void);
+const EVP_CIPHER *EVP_des_cfb1(void);
+const EVP_CIPHER *EVP_des_cfb8(void);
+const EVP_CIPHER *EVP_des_cfb64(void);
+const EVP_CIPHER *EVP_des_ofb(void);
+const EVP_CIPHER *EVP_des_cbc(void);
 ]]
 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
@@ -55,12 +39,11 @@ hash = {
 _M.hash = hash
 
 local cipher
-cipher = function (size, _cipher)
-    local _size = size or 128
+cipher = function (_cipher)
     local _cipher = _cipher or "cbc"
-    local func = "EVP_aes_" .. _size .. "_" .. _cipher
+    local func = "EVP_des_" .. _cipher
     if C[func] then
-        return { size=_size, cipher=_cipher, method=C[func]()}
+        return { size=64, cipher=_cipher, method=C[func]() }
     else
         return nil
     end
@@ -74,11 +57,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
     local _cipherLength = _cipher.size/8
-    local gen_key = ffi_new("unsigned char[?]",_cipherLength)
-    local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
+    local gen_key = ffi_new("unsigned char[?]", _cipherLength)
+    local gen_iv = ffi_new("unsigned char[?]", _cipherLength)
 
     if type(_hash) == "table" then
-        if not _hash.iv or #_hash.iv ~= 16 then
+        if not _hash.iv or #_hash.iv ~= 8 then
           return nil, "bad iv"
         end
 
@@ -98,7 +81,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
             ffi_copy(gen_key, key, _cipherLength)
         end
 
-        ffi_copy(gen_iv, _hash.iv, 16)
+        ffi_copy(gen_iv, _hash.iv, 8)
 
     else
         if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
