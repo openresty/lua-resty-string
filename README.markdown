@@ -33,7 +33,7 @@ Synopsis
 ```lua
     # nginx.conf:
 
-    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;"
+    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;";
 
     server {
         location = /test {
