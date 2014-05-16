@@ -168,6 +168,15 @@ Synopsis
     ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
         aes_128_cbc_with_iv:decrypt(encrypted))
+        
+        
+    -- example with HMAC-SHA256
+    -- there are other algorithms supported as well:
+    -- sha1, sha224, sha256, sha384, sha512
+    local resty_hmac_sha256 = require "resty.hmac"
+    local hmac_sha256 = resty_hmac_sha256:new()
+    local digest = hmac_sha256:digest("sha256","secret-key","Hello world")
+    ngx.say("hmac_sha256: ", digest)
 ```
 
 [Back to TOC](#table-of-contents)
