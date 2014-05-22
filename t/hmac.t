@@ -167,6 +167,29 @@ GET /t
 --- grep_error_log_out
 attempt to use unknown algorithm: 'INVALID_SHA'
 
+=== TEST 7: test with null secret or message
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resty_hmac_sha256 = require "resty.hmac"
+            local hmac_sha256 = resty_hmac_sha256:new()
+
+            local digest = hmac_sha256:digest("sha256",nil,"Hello world")
+            ngx.say("hmac_sha256: ", digest)
+
+            digest = hmac_sha256:digest("sha256",nil,"")
+            ngx.say("hmac_sha256: ", digest)
+        ';
+    }
+--- request
+GET /t
+--- response_body_like
+.*500 Internal Server Error.*
+--- error_code: 500
+--- grep_error_log eval: qr/attempt to digest with a null key or message.*?/
+--- grep_error_log_out
+attempt to digest with a null key or message
 
 
 

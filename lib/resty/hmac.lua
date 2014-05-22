@@ -77,6 +77,9 @@ end
 --
 function _M.digest(self, dtype, key, msg, raw)
     local evp_md, digest_length_int = getDigestAlgorithm(dtype)
+    if key == nil or msg == nil then
+        error("attempt to digest with a null key or message")
+    end
 
     C.HMAC(evp_md, key, #key, msg, #msg, buf, digest_len)
 
