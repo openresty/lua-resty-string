@@ -1,4 +1,6 @@
-e Test::Nginx::Socket;
+# vi:ft=
+
+use Test::Nginx::Socket;
 
 repeat_each(2);
 
