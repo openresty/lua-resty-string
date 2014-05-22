@@ -142,7 +142,30 @@ hmac_sha512: 1560eeb87551d027de6007027af3faab5f644f8ef96519c4b519531a6620c755b61
 --- no_error_log
 [error]
 
+=== TEST 6: test with an invalid HMAC algorithm
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resty_hmac_sha256 = require "resty.hmac"
+            local hmac_sha256 = resty_hmac_sha256:new()
 
+            local digest = hmac_sha256:digest("INVALID_SHA","secret-key","Hello world")
+            ngx.say("hmac_sha256: ", digest)
+
+            --test with an empty string
+            digest = hmac_sha256:digest("INVALID_SHA","secret-key","")
+            ngx.say("hmac_sha256: ", digest)
+        ';
+    }
+--- request
+GET /t
+--- response_body_like
+.*500 Internal Server Error.*
+--- error_code: 500
+--- grep_error_log eval: qr/attempt to use unknown algorithm: 'INVALID_SHA'.*?/
+--- grep_error_log_out
+attempt to use unknown algorithm: 'INVALID_SHA'
 
 
 

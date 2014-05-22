@@ -58,7 +58,7 @@ end
 local function getDigestAlgorithm(dtype)
     local md_name = available_algorithms[dtype]
     if ( md_name == nil ) then
-        error("attempt to use unkown algorithm: '" .. dtype ..
+        error("attempt to use unknown algorithm: '" .. dtype ..
                 "'.\n Available algorithms are: sha1,sha224,sha256,sha384,sha512")
     end
     return md_name.alg, md_name.length
