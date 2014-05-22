@@ -39,11 +39,11 @@ const EVP_MD *EVP_sha512(void);
 -- table definind the available algorithms and the length of each digest
 -- for more information @see: http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
 local available_algorithms = {
-    sha1   = { method = "EVP_sha1",   length = 160/8,  alg = C["EVP_sha1"]()     },
-    sha224 = { method = "EVP_sha224", length = 224/8,  alg = C["EVP_sha224"]()   },
-    sha256 = { method = "EVP_sha256", length = 256/8,  alg = C["EVP_sha256"]()   },
-    sha384 = { method = "EVP_sha384", length = 384/8,  alg = C["EVP_sha384"]()   },
-    sha512 = { method = "EVP_sha512", length = 512/8,  alg = C["EVP_sha512"]()   }
+    sha1   = { alg = C.EVP_sha1(),   length = 160/8  },
+    sha224 = { alg = C.EVP_sha224(), length = 224/8  },
+    sha256 = { alg = C.EVP_sha256(), length = 256/8  },
+    sha384 = { alg = C.EVP_sha384(), length = 384/8  },
+    sha512 = { alg = C.EVP_sha512(), length = 512/8  }
 }
 
 -- 64 is the max lenght and it covers up to sha512 algorithm
