@@ -24,7 +24,7 @@ end
 
 function _M.update(self, s)
     self._ctx = C.crc32(self._ctx, s, #s) 
-    return self._ctx
+    return tonumber(self._ctx)
 end
 
 
