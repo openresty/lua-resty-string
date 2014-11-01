@@ -34,6 +34,7 @@ int	BIO_puts(BIO *bp,const char *buf);
 void BIO_vfree(BIO *a);
 
 typedef struct rsa_st RSA;
+int RSA_size(const RSA *rsa);
 void RSA_free(RSA *rsa);
 typedef int pem_password_cb(char *buf, int size, int rwflag, void *userdata);
 RSA * PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **rsa, pem_password_cb *cb,
@@ -89,6 +90,7 @@ function _M.new(self, key, is_pub, padding, password)
     return setmetatable({
             public_rsa = is_pub and rsa,
             private_rsa = (not is_pub) and rsa,
+            size = C.RSA_size(rsa),
             padding = padding or PADDING.RSA_PKCS1_PADDING
         }, mt)
 end
@@ -100,7 +102,7 @@ function _M.decrypt(self, str)
         return nil, "not inited for decrypt"
     end
 
-    local buf = ffi_new("unsigned char[?]", 117)
+    local buf = ffi_new("unsigned char[?]", self.size)
     local len = C.RSA_private_decrypt(#str, str, buf, rsa, self.padding)
     if len == -1 then
         return err()
@@ -116,7 +118,7 @@ function _M.encrypt(self, str)
         return nil, "not inited for encrypt"
     end
 
-    local buf = ffi_new("unsigned char[?]", 128)
+    local buf = ffi_new("unsigned char[?]", self.size)
     local len = C.RSA_public_encrypt(#str, str, buf, rsa, self.padding)
     if len == -1 then
         return err()
