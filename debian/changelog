@@ -1,0 +1,5 @@
+lua-resty-string (0.09-1) trusty; urgency=low
+
+  * Add debian packaging info
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Tue, 16 Dec 2014 16:10:00 -0300

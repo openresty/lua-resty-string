@@ -1,0 +1,17 @@
+Source: lua-resty-string
+Section: interpreters
+Priority: optional
+Maintainer: Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>
+Build-Depends: debhelper (>= 8), dh-lua
+Standards-Version: 3.9.5
+Homepage: https://github.com/openresty/lua-resty-string
+
+Package: lua-resty-string
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, nginx-extras | nginx-custom
+Description: Lua Resty String module for the nginx embedded Lua language
+ This modules has string utilities and common hash functions reads for ngx_lua
+ and LuaJIT.
+ .
+ Note that this module works for both nginx (provided by nginx-extras or
+ nginx-custom) and the OpenResty bundle.
