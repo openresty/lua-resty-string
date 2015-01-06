@@ -1,4 +1,10 @@
-lua-resty-string (0.09-1ppa1~precise1) trusty; urgency=low
+lua-resty-string (0.09-1ppa1~precise2) precise; urgency=low
+
+  * Fix serie information in changelog
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Mon, 6 Jan 2015 17:03:00 -0200
+
+lua-resty-string (0.09-1ppa1~precise1) precise; urgency=low
 
   * Add ppa1 suffix and precise serie information
 
