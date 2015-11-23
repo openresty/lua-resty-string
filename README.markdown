@@ -33,7 +33,7 @@ Synopsis
 ```lua
     # nginx.conf:
 
-    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;"
+    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;";
 
     server {
         location = /test {
@@ -158,6 +158,16 @@ Synopsis
     ngx.say("AES 256 CBC (SHA-512, salted) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 256 CBC (SHA-512, salted) Decrypted: ",
         aes_256_cbc_sha512x5:decrypt(encrypted))
+
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_128_cbc_with_iv = assert(aes:new("1234567890123456",
+        nil, aes.cipher(128,"cbc"), {iv="1234567890123456"}))
+        -- AES 128 CBC with IV and no SALT
+    local encrypted = aes_128_cbc_with_iv:encrypt("Really secret message!")
+    ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
+        aes_128_cbc_with_iv:decrypt(encrypted))
 ```
 
 [Back to TOC](#table-of-contents)
