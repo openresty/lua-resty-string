@@ -5,8 +5,8 @@ local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
-local setmetatable = setmetatable
-local error = error
+--local setmetatable = setmetatable
+--local error = error
 local tonumber = tonumber
 
 
