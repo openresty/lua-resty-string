@@ -9,7 +9,7 @@ local ffi_str = ffi.string
 local ffi_copy = ffi.copy
 local C = ffi.C
 local setmetatable = setmetatable
-local error = error
+--local error = error
 local type = type
 
 
