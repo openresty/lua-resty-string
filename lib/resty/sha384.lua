@@ -1,13 +1,13 @@
 -- Copyright (C) by Yichun Zhang (agentzh)
 
 
-local sha512 = require "resty.sha512"
+require "resty.sha512"
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
 local setmetatable = setmetatable
-local error = error
+--local error = error
 
 
 local _M = { _VERSION = '0.09' }
