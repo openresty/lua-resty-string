@@ -78,6 +78,8 @@ const EVP_CIPHER *EVP_aes_256_ofb(void);
 void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
 int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
 
+int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *ctx, int padding);
+
 int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher,
         ENGINE *impl, unsigned char *key, const unsigned char *iv);
 
@@ -125,12 +127,13 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, padding)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
+    local padding = padding or 1
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
@@ -174,6 +177,14 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
       gen_key, gen_iv) == 0 or
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
       gen_key, gen_iv) == 0 then
+        return nil
+    end
+
+    if C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, padding) == 0 then
+        return nil
+    end
+
+    if C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, padding) == 0 then
         return nil
     end
 
