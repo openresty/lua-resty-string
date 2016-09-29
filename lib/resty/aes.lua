@@ -126,12 +126,13 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, padding)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
+    local padding = padding or 1
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
@@ -178,6 +179,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         return nil
     end
 
+    if padding == 0 then
+        C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, 0)
+        C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, 0)
+    end
+
     ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
     ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
 
@@ -188,17 +194,13 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
 end
 
 
-function _M.encrypt(self, s, no_padding)
+function _M.encrypt(self, s)
     local s_len = #s
     local max_len = s_len + 16
     local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
     local ctx = self._encrypt_ctx
-
-    if no_padding then
-        C.EVP_CIPHER_CTX_set_padding(ctx, 0)
-    end
 
     if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
         return nil
@@ -216,16 +218,12 @@ function _M.encrypt(self, s, no_padding)
 end
 
 
-function _M.decrypt(self, s, no_padding)
+function _M.decrypt(self, s)
     local s_len = #s
     local buf = ffi_new("unsigned char[?]", s_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
     local ctx = self._decrypt_ctx
-
-    if no_padding then
-        C.EVP_CIPHER_CTX_set_padding(ctx, 0)
-    end
 
     if C.EVP_DecryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
       return nil
