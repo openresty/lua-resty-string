@@ -310,8 +310,6 @@ failed to new: bad iv length
             local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
             ngx.say(decrypted == "hello")
         }
-=======
->>>>>>> d736210... add function for padding setting
     }
 --- request
 GET /t
@@ -410,16 +408,19 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
-            local aes_default = aes:new(key,nil,
-              aes.cipher(256,"cbc"),
-              {iv = string.sub(key,1,16)}, nil, 0)
+            local aes_default = aes:new(
+                key, nil,
+                aes.cipher(256,"cbc"),
+                {iv = string.sub(key, 1, 16)}, nil,
+                nil, 0
+            )
 
             local text = "hello"
             local block_size = 32
             local pad = block_size - #text % 32
             ngx.say("pad: ", pad)
 
-            text_paded = text .. string.rep(string.char(pad), pad)
+            local text_paded = text .. string.rep(string.char(pad), pad)
             local encrypted = aes_default:encrypt(text_paded)
             ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
 

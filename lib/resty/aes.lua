@@ -135,11 +135,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
-    local padding = padding or 1
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
     iv_len = iv_len or _cipherLength
+    padding = padding or 1
 
     if type(_hash) == "table" then
         if not _hash.iv then
