@@ -180,13 +180,8 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, padding)
         return nil
     end
 
-    if C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, padding) == 0 then
-        return nil
-    end
-
-    if C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, padding) == 0 then
-        return nil
-    end
+    C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, padding)
+    C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, padding)
 
     ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
     ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
