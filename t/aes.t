@@ -308,9 +308,14 @@ failed to new: bad iv
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
-            local aes_default = aes:new(key,nil,
-              aes.cipher(256,"cbc"),
-              {iv = string.sub(key,1,16)}, nil, 0)
+            local aes_default = aes:new(
+                key,
+                nil,
+                aes.cipher(256,"cbc"),
+                {iv = string.sub(key, 1, 16)}, 
+                nil, 
+                0
+            )
             local text = "hello"
             local block_size = 32
             local pad = block_size - #text % 32
@@ -334,5 +339,4 @@ pad: 27
 true
 --- no_error_log
 [error]
-
 
