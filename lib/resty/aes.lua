@@ -206,11 +206,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
     end
 
     if C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, padding) == 0 then
-        return nil, "failed to set padding"
+        return nil, "failed to set padding for encrypt context"
     end
 
     if C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, padding) == 0 then
-        return nil, "failed to set padding"
+        return nil, "failed to set padding for decrypt context"
     end
 
     ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
