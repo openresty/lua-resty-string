@@ -1,14 +1,19 @@
-module("resty.sha256", package.seeall)
+-- Copyright (C) by Yichun Zhang (agentzh)
 
-_VERSION = '0.05'
 
-local sha = require "resty.sha"
+require "resty.sha"
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
+local setmetatable = setmetatable
+--local error = error
 
-local mt = { __index = resty.sha256 }
+
+local _M = { _VERSION = '0.09' }
+
+
+local mt = { __index = _M }
 
 
 ffi.cdef[[
@@ -31,7 +36,7 @@ local buf = ffi_new("char[?]", digest_len)
 local ctx_ptr_type = ffi.typeof("SHA256_CTX[1]")
 
 
-function new(self)
+function _M.new(self)
     local ctx = ffi_new(ctx_ptr_type)
     if C.SHA256_Init(ctx) == 0 then
         return nil
@@ -41,12 +46,12 @@ function new(self)
 end
 
 
-function update(self, s)
+function _M.update(self, s)
     return C.SHA256_Update(self._ctx, s, #s) == 1
 end
 
 
-function final(self)
+function _M.final(self)
     if C.SHA256_Final(buf, self._ctx) == 1 then
         return ffi_str(buf, digest_len)
     end
@@ -55,14 +60,10 @@ function final(self)
 end
 
 
-function reset(self)
+function _M.reset(self)
     return C.SHA256_Init(self._ctx) == 1
 end
 
 
--- to prevent use of casual module global variables
-getmetatable(resty.sha256).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
-end
+return _M
 

@@ -1,8 +1,11 @@
-module("resty.sha", package.seeall)
+-- Copyright (C) by Yichun Zhang (agentzh)
 
-_VERSION = '0.05'
 
 local ffi = require "ffi"
+
+
+local _M = { _VERSION = '0.09' }
+
 
 ffi.cdef[[
 typedef unsigned long SHA_LONG;
@@ -13,3 +16,4 @@ enum {
 };
 ]];
 
+return _M

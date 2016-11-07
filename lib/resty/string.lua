@@ -1,11 +1,17 @@
-module("resty.string", package.seeall)
+-- Copyright (C) by Yichun Zhang (agentzh)
 
-_VERSION = '0.05'
 
 local ffi = require "ffi"
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local C = ffi.C
+--local setmetatable = setmetatable
+--local error = error
+local tonumber = tonumber
+
+
+local _M = { _VERSION = '0.09' }
+
 
 ffi.cdef[[
 typedef unsigned char u_char;
@@ -18,7 +24,7 @@ intptr_t ngx_atoi(const unsigned char *line, size_t n);
 local str_type = ffi.typeof("uint8_t[?]")
 
 
-function to_hex(s)
+function _M.to_hex(s)
     local len = #s * 2
     local buf = ffi_new(str_type, len)
     C.ngx_hex_dump(buf, s, #s)
@@ -26,14 +32,9 @@ function to_hex(s)
 end
 
 
-function atoi(s)
+function _M.atoi(s)
     return tonumber(C.ngx_atoi(s, #s))
 end
 
 
--- to prevent use of casual module global variables
-getmetatable(resty.string).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
-end
-
+return _M

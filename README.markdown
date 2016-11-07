@@ -3,6 +3,17 @@ Name
 
 lua-resty-string - String utilities and common hash functions for ngx_lua and LuaJIT
 
+Table of Contents
+=================
+
+* [Name](#name)
+* [Status](#status)
+* [Description](#description)
+* [Synopsis](#synopsis)
+* [Author](#author)
+* [Copyright and License](#copyright-and-license)
+* [See Also](#see-also)
+
 Status
 ======
 
@@ -19,13 +30,14 @@ the [ngx_lua module](http://wiki.nginx.org/HttpLuaModule), and [LuaJIT 2.0](http
 Synopsis
 ========
 
+```lua
     # nginx.conf:
 
-    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;"
+    lua_package_path "/path/to/lua-resty-string/lib/?.lua;;";
 
     server {
         location = /test {
-            content_by_lua conf/test.lua;
+            content_by_lua_file conf/test.lua;
         }
     }
 
@@ -147,19 +159,32 @@ Synopsis
     ngx.say("AES 256 CBC (SHA-512, salted) Decrypted: ",
         aes_256_cbc_sha512x5:decrypt(encrypted))
 
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_128_cbc_with_iv = assert(aes:new("1234567890123456",
+        nil, aes.cipher(128,"cbc"), {iv="1234567890123456"}))
+        -- AES 128 CBC with IV and no SALT
+    local encrypted = aes_128_cbc_with_iv:encrypt("Really secret message!")
+    ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
+        aes_128_cbc_with_iv:decrypt(encrypted))
+```
 
+[Back to TOC](#table-of-contents)
 
 Author
 ======
 
-Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>
+Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>
+
+[Back to TOC](#table-of-contents)
 
 Copyright and License
 =====================
 
 This module is licensed under the BSD license.
 
-Copyright (C) 2012, by Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
+Copyright (C) 2012-2016, by Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 All rights reserved.
 
@@ -171,7 +196,11 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+[Back to TOC](#table-of-contents)
+
 See Also
 ========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
+
+[Back to TOC](#table-of-contents)
 

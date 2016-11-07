@@ -1,6 +1,6 @@
 # vi:ft=
 
-use Test::Nginx::Socket;
+use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
@@ -195,4 +195,144 @@ true
 true
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: AES-128 CBC custom keygen (without method)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new(ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),nil,
+              aes.cipher(128,"cbc"),
+              {iv = ngx.decode_base64("Jq5cyFTja2vfyjZoSN6muw==")})
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+AES-128 CBC (custom keygen) MD5: 7b47a4dbb11e2cddb2f3740c9e3a552b
+true
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: AES-128 CBC custom keygen (without method, bad key len)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+
+            local aes_default, err = aes:new("hel", nil, aes.cipher(128,"cbc"),
+              {iv = ngx.decode_base64("Jq5cyFTja2vfyjZoSN6muw==")})
+
+            if not aes_default then
+                ngx.say("failed to new: ", err)
+                return
+            end
+
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+failed to new: bad key length
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: AES-128 CBC custom keygen (without method, bad iv)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+
+            local aes_default, err = aes:new(
+                ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),
+                nil,
+                aes.cipher(128,"cbc"),
+                {iv = "hello"}
+            )
+
+            if not aes_default then
+                ngx.say("failed to new: ", err)
+                return
+            end
+
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+            local aes_check = aes:new("secret")
+            local encrypted_check = aes_check:encrypt("hello")
+            ngx.say(encrypted_check == encrypted)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+failed to new: bad iv
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: AES-256 CBC custom keygen, user padding  (without method)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
+            local aes_default = aes:new(key,nil,
+              aes.cipher(256,"cbc"),
+              {iv = string.sub(key,1,16)}, nil, 0)
+            local text = "hello"
+            local block_size = 32
+            local pad = block_size - #text % 32
+            ngx.say("pad: ", pad)
+            text_paded = text .. string.rep(string.char(pad), pad)
+            local encrypted = aes_default:encrypt(text_paded)
+            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            local pad = string.byte(string.sub(decrypted, #decrypted))
+            ngx.say("pad: ", pad)
+            local decrypted_text = string.sub(decrypted, 1, #decrypted-pad)
+            ngx.say(decrypted_text == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+pad: 27
+AES-256 CBC (custom keygen, user padding with block_size=32) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1
+pad: 27
+true
+--- no_error_log
+[error]
+
 

@@ -1,6 +1,6 @@
 # vi:ft=
 
-use Test::Nginx::Socket;
+use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
