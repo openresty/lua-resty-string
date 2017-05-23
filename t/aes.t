@@ -89,29 +89,24 @@ true
 
 
 
-=== TEST 4: AES oversized 10-byte salt
+=== TEST 4: AES oversized or too short salt
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local aes_default = aes:new("secret","Oversized!")
-            local encrypted = aes_default:encrypt("hello")
-            ngx.say("AES-128 (oversized salt) CBC MD5: ", str.to_hex(encrypted))
-            local decrypted = aes_default:decrypt(encrypted)
-            ngx.say(decrypted == "hello")
-            local aes_check = aes:new("secret","Oversize")
-            local encrypted_check = aes_check:encrypt("hello")
-            ngx.say(encrypted_check == encrypted)
+            local res, err = aes:new("secret","Oversized!")
+            ngx.say(res, ", ", err)
+            res, err = aes:new("secret","abc")
+            ngx.say(res, ", ", err)
         ';
     }
 --- request
 GET /t
 --- response_body
-AES-128 (oversized salt) CBC MD5: 90a9c9a96f06c597c8da99c37a6c689f
-true
-true
+nil, salt must be 8 characters or nil
+nil, salt must be 8 characters or nil
 --- no_error_log
 [error]
 

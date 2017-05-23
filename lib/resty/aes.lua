@@ -159,6 +159,10 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         ffi_copy(gen_iv, _hash.iv, 16)
 
     else
+        if salt and #salt ~= 8 then
+            return nil, "salt must be 8 characters or nil"
+        end
+
         if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
                             hash_rounds, gen_key, gen_iv)
             ~= _cipherLength
