@@ -97,6 +97,7 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
         const unsigned char *salt, const unsigned char *data, int datal,
         int count, unsigned char *key,unsigned char *iv);
+int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *x, int padding);
 ]]
 
 local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
@@ -125,12 +126,13 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, padding)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
+    local padding = padding or 1
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
@@ -179,6 +181,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
       gen_key, gen_iv) == 0 then
         return nil
+    end
+
+    if padding == 0 then
+        C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, 0)
+        C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, 0)
     end
 
     ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)

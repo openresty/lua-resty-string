@@ -293,3 +293,39 @@ failed to new: bad iv
 --- no_error_log
 [error]
 
+
+
+=== TEST 11: AES-256 CBC custom keygen, user padding  (without method)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
+            local aes_default = aes:new(key,nil,
+              aes.cipher(256,"cbc"),
+              {iv = string.sub(key,1,16)}, nil, 0)
+            local text = "hello"
+            local block_size = 32
+            local pad = block_size - #text % 32
+            ngx.say("pad: ", pad)
+            text_paded = text .. string.rep(string.char(pad), pad)
+            local encrypted = aes_default:encrypt(text_paded)
+            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            local pad = string.byte(string.sub(decrypted, #decrypted))
+            ngx.say("pad: ", pad)
+            local decrypted_text = string.sub(decrypted, 1, #decrypted-pad)
+            ngx.say(decrypted_text == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+pad: 27
+AES-256 CBC (custom keygen, user padding with block_size=32) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1
+pad: 27
+true
+--- no_error_log
+[error]
