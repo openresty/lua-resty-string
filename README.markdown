@@ -151,9 +151,10 @@ Synopsis
     local aes = require "resty.aes"
     local str = require "resty.string"
     local aes_256_cbc_sha512x5 = aes:new("AKeyForAES-256-CBC",
-        "MySalt!", aes.cipher(256,"cbc"), aes.hash.sha512, 5)
+        "MySalt!!", aes.cipher(256,"cbc"), aes.hash.sha512, 5)
         -- AES 256 CBC with 5 rounds of SHA-512 for the key
-        -- and a salt of "MySalt!"
+        -- and a salt of "MySalt!!"
+        -- Note: salt can be either nil or exactly 8 characters long
     local encrypted = aes_256_cbc_sha512x5:encrypt("Really secret message!")
     ngx.say("AES 256 CBC (SHA-512, salted) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 256 CBC (SHA-512, salted) Decrypted: ",
