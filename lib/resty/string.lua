@@ -10,7 +10,7 @@ local C = ffi.C
 local tonumber = tonumber
 
 
-local _M = { _VERSION = '0.09' }
+local _M = { _VERSION = '0.10' }
 
 
 ffi.cdef[[
