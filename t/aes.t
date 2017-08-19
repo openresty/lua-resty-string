@@ -96,7 +96,7 @@ true
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local res, err = aes:new("secret","Oversized!")
+            local res, err = aes:new("secret","Oversized!", nil, aes.hash.md5)
             ngx.say(res, ", ", err)
             res, err = aes:new("secret","abc", nil, aes.hash.md5)
             ngx.say(res, ", ", err)
