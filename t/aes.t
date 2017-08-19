@@ -24,7 +24,7 @@ __DATA__
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local aes_default = aes:new("secret")
+            local aes_default = aes:new("secret", nil, nil, aes.hash.md5)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-128 CBC MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
@@ -48,7 +48,7 @@ true
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local aes_default = aes:new("")
+            local aes_default = aes:new("", nil, nil, aes.hash.md5)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-128 (empty key) CBC MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
@@ -72,7 +72,7 @@ true
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local aes_default = aes:new("secret","WhatSalt")
+            local aes_default = aes:new("secret","WhatSalt", nil, aes.hash.md5)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-128 (salted) CBC MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
@@ -98,7 +98,7 @@ true
             local str = require "resty.string"
             local res, err = aes:new("secret","Oversized!")
             ngx.say(res, ", ", err)
-            res, err = aes:new("secret","abc")
+            res, err = aes:new("secret","abc", nil, aes.hash.md5)
             ngx.say(res, ", ", err)
         ';
     }
@@ -290,6 +290,28 @@ failed to new: bad key length
 GET /t
 --- response_body
 failed to new: bad iv
+--- no_error_log
+[error]
+
+=== TEST 11: AES new default hello
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new("secret")
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+AES-128 CBC MD5: b1062436a8c7a456e3c2b068222cc818
+true
 --- no_error_log
 [error]
 
