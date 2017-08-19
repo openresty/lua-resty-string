@@ -177,7 +177,7 @@ true
             ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
             ngx.say(decrypted == "hello")
-            local aes_check = aes:new("secret")
+            local aes_check = aes:new("secret", nil, nil, aes.hash.md5)
             local encrypted_check = aes_check:encrypt("hello")
             ngx.say(encrypted_check == encrypted)
         ';
@@ -207,7 +207,7 @@ true
             ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
             ngx.say(decrypted == "hello")
-            local aes_check = aes:new("secret")
+            local aes_check = aes:new("secret", nil, nil, aes.hash.md5)
             local encrypted_check = aes_check:encrypt("hello")
             ngx.say(encrypted_check == encrypted)
         ';
@@ -243,7 +243,7 @@ true
             ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
             ngx.say(decrypted == "hello")
-            local aes_check = aes:new("secret")
+            local aes_check = aes:new("secret", nil, nil, aes.hash.md5)
             local encrypted_check = aes_check:encrypt("hello")
             ngx.say(encrypted_check == encrypted)
         ';
@@ -281,7 +281,7 @@ failed to new: bad key length
             ngx.say("AES-128 CBC (custom keygen) MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)
             ngx.say(decrypted == "hello")
-            local aes_check = aes:new("secret")
+            local aes_check = aes:new("secret", nil, nil, aes.hash.md5)
             local encrypted_check = aes_check:encrypt("hello")
             ngx.say(encrypted_check == encrypted)
         ';
@@ -310,7 +310,7 @@ failed to new: bad iv
 --- request
 GET /t
 --- response_body
-AES-128 CBC MD5: b1062436a8c7a456e3c2b068222cc818
+AES-128 CBC MD5: c290e8b6de4ea5773414e019fe7f17a3
 true
 --- no_error_log
 [error]
