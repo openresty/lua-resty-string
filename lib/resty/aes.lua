@@ -125,16 +125,39 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+local options = {
+    default = 0x00,
+    key_without_gen = 0x01
+    -- may add other things like padding mode
+}
+_M.options = options
+
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
     local encrypt_ctx = ffi_new(ctx_ptr_type)
     local decrypt_ctx = ffi_new(ctx_ptr_type)
     local _cipher = _cipher or cipher()
+    local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
+    local option = option or options.default
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
-    if type(_hash) == "table" then
+    if option == options.key_without_gen then
+        -- use origin key
+        if not key then
+            return nil, "key is nil!"
+        end
+
+        if #key > _cipherLength then
+            return nil, "key too long"
+        end
+
+        -- note it's key padding not data padding, and it use zero padding only;
+        key = key..string.rep("\0", _cipherLength - #key)
+        ffi_copy(gen_key, key, _cipherLength)
+
+    elseif type(_hash) == "table" then
         if not _hash.iv or #_hash.iv ~= 16 then
           return nil, "bad iv"
         end
@@ -157,7 +180,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
 
         ffi_copy(gen_iv, _hash.iv, 16)
 
-    elseif _hash then
+    else then
         if salt and #salt ~= 8 then
             return nil, "salt must be 8 characters or nil"
         end
@@ -168,20 +191,6 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         then
             return nil
         end
-
-    else
-        -- use origin key by default
-        if not key then
-            return nil, "key is nil!"
-        end
-
-        if #key > _cipherLength then
-            return nil, "key too long"
-        end
-
-        -- note it's key padding not data padding, and it use zero padding only;
-        key = key..string.rep("\0", _cipherLength - #key)
-        ffi_copy(gen_key, key, _cipherLength)
     end
 
     C.EVP_CIPHER_CTX_init(encrypt_ctx)
