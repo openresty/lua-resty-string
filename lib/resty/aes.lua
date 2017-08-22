@@ -125,10 +125,11 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
+
 local options = {
-    default = 0x00,
-    key_without_gen = 0x01
-    -- may add other things like padding mode
+    default = 0x01,
+    key_without_gen = 0x02
+    -- may add other things like padding mode; or use bit 'or/and' operation for combined option
 }
 _M.options = options
 
@@ -143,7 +144,44 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
-    if option == options.key_without_gen then
+    if option == options.default then
+        if type(_hash) == "table" then
+            if not _hash.iv or #_hash.iv ~= 16 then
+              return nil, "bad iv"
+            end
+
+            if _hash.method then
+                local tmp_key = _hash.method(key)
+
+                if #tmp_key ~= _cipherLength then
+                    return nil, "bad key length"
+                end
+
+                ffi_copy(gen_key, tmp_key, _cipherLength)
+
+            elseif #key ~= _cipherLength then
+                return nil, "bad key length"
+
+            else
+                ffi_copy(gen_key, key, _cipherLength)
+            end
+
+            ffi_copy(gen_iv, _hash.iv, 16)
+
+        else
+            if salt and #salt ~= 8 then
+                return nil, "salt must be 8 characters or nil"
+            end
+
+            if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
+                                hash_rounds, gen_key, gen_iv)
+                ~= _cipherLength
+            then
+                return nil
+            end
+        end
+
+    elseif option == options.key_without_gen then
         -- use origin key
         if not key then
             return nil, "key is nil!"
@@ -156,41 +194,6 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
         -- note it's key padding not data padding, and it use zero padding only;
         key = key..string.rep("\0", _cipherLength - #key)
         ffi_copy(gen_key, key, _cipherLength)
-
-    elseif type(_hash) == "table" then
-        if not _hash.iv or #_hash.iv ~= 16 then
-          return nil, "bad iv"
-        end
-
-        if _hash.method then
-            local tmp_key = _hash.method(key)
-
-            if #tmp_key ~= _cipherLength then
-                return nil, "bad key length"
-            end
-
-            ffi_copy(gen_key, tmp_key, _cipherLength)
-
-        elseif #key ~= _cipherLength then
-            return nil, "bad key length"
-
-        else
-            ffi_copy(gen_key, key, _cipherLength)
-        end
-
-        ffi_copy(gen_iv, _hash.iv, 16)
-
-    else then
-        if salt and #salt ~= 8 then
-            return nil, "salt must be 8 characters or nil"
-        end
-
-        if C.EVP_BytesToKey(_cipher.method, _hash, salt, key, #key,
-                            hash_rounds, gen_key, gen_iv)
-            ~= _cipherLength
-        then
-            return nil
-        end
     end
 
     C.EVP_CIPHER_CTX_init(encrypt_ctx)
