@@ -292,3 +292,25 @@ GET /t
 failed to new: bad iv
 --- no_error_log
 [error]
+
+=== TEST 11: AES key_without_gen hello
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new("secret", nil, nil, nil, nil, aes.options.key_without_gen)
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-128 CBC MD5: ", str.to_hex(encrypted))
+            local decrypted = aes_default:decrypt(encrypted)
+            ngx.say(decrypted == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+AES-128 CBC MD5: c290e8b6de4ea5773414e019fe7f17a3
+true
+--- no_error_log
+[error]
