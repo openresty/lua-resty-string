@@ -293,14 +293,16 @@ failed to new: bad iv
 --- no_error_log
 [error]
 
-=== TEST 11: AES key_without_gen hello
+
+
+=== TEST 11: AES option:use_raw_key hello
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local aes = require "resty.aes"
             local str = require "resty.string"
-            local aes_default = aes:new("secret", nil, nil, nil, nil, aes.options.key_without_gen)
+            local aes_default = aes:new("secret", nil, nil, nil, nil, aes.options.use_raw_key)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-128 CBC MD5: ", str.to_hex(encrypted))
             local decrypted = aes_default:decrypt(encrypted)

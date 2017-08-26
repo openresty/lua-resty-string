@@ -11,6 +11,7 @@ local C = ffi.C
 local setmetatable = setmetatable
 --local error = error
 local type = type
+local str_rep = string.rep
 
 
 local _M = { _VERSION = '0.10' }
@@ -127,9 +128,9 @@ _M.cipher = cipher
 
 
 local options = {
-    default = 0x01,
-    key_without_gen = 0x02
-    -- may add other things like padding mode; or use bit 'or/and' operation for combined option
+    use_raw_key = 0x01,
+    -- may add other things like padding mode;
+    -- may use bit 'or/and' operation for combined options.
 }
 _M.options = options
 
@@ -139,15 +140,14 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
-    local option = option or options.default
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
-    if option == options.default then
+    if not option then
         if type(_hash) == "table" then
             if not _hash.iv or #_hash.iv ~= 16 then
-              return nil, "bad iv"
+                return nil, "bad iv"
             end
 
             if _hash.method then
@@ -181,7 +181,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
             end
         end
 
-    elseif option == options.key_without_gen then
+    elseif option == options.use_raw_key then
         -- use origin key
         if not key then
             return nil, "key is nil!"
@@ -192,7 +192,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, option)
         end
 
         -- note it's key padding not data padding, and it use zero padding only;
-        key = key..string.rep("\0", _cipherLength - #key)
+        key = key..str_rep("\0", _cipherLength - #key)
         ffi_copy(gen_key, key, _cipherLength)
     end
 
