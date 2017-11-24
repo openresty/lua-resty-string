@@ -1,13 +1,16 @@
 # vi:ft=
 
 use Test::Nginx::Socket::Lua;
+use Cwd qw(cwd);
 
 repeat_each(2);
 
+my $pwd = cwd();
+
 plan tests => repeat_each() * (3 * blocks());
 
-our $HttpConfig = <<'_EOC_';
-    lua_package_path 'lib/?.lua;;';
+our $HttpConfig = <<"_EOC_";
+    lua_package_path "$pwd/lib/?.lua;$pwd/../lua-resty-core/lib/?.lua;;";
     lua_package_cpath 'lib/?.so;;';
 _EOC_
 
