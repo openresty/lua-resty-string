@@ -169,6 +169,13 @@ Synopsis
     ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
         aes_128_cbc_with_iv:decrypt(encrypted))
+
+    local b64 = require "resty.base64"
+    ngx.say("base64 encoded: ", b64.encode_base64("foo"))
+    ngx.say("url safe base64 encoded: ", b64.encode_base64url("foo"))
+    -- Note: encode_base64url turns off paddings
+    ngx.say("base64 decoded: ", b64.decode_base64("Zm9v"))
+    ngx.say("url safe base64 encoded: ", b64.decode_base64url("Zm9v"))
 ```
 
 [Back to TOC](#table-of-contents)
