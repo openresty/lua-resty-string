@@ -169,6 +169,19 @@ Synopsis
     ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
         aes_128_cbc_with_iv:decrypt(encrypted))
+        
+        -- below is an example of "use_raw_key" option which is compatible 
+        -- with openssl API in common languages like C and PHP
+        -- note the example uses default cipher, which is AES-128-CBC
+        -- and takes input key (which is "secret") exactly without any digist calculation
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_default = aes:new("secret", nil, nil, nil, nil, aes.options.use_raw_key)
+    local encrypted = aes_default:encrypt("hello")
+    ngx.say("AES-128 CBC Raw Key Encrypted HEX: ", str.to_hex(encrypted))
+    ngx.say("AES-128 CBC Raw Key Encrypted Base64: ", ngx.endcode_base64(encrypted))
+    ngx.say("AES-128 CBC Raw Key Decrypted : ", aes_default:decrypt(encrypted))
+    
 ```
 
 [Back to TOC](#table-of-contents)
