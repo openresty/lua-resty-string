@@ -22,26 +22,7 @@ ffi.cdef[[
 typedef struct engine_st ENGINE;
 
 typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st
-{
-const EVP_CIPHER *cipher;
-ENGINE *engine;
-int encrypt;
-int buf_len;
-
-unsigned char  oiv[16];
-unsigned char  iv[16];
-unsigned char buf[32];
-int num;
-
-void *app_data;
-int key_len;
-unsigned long flags;
-void *cipher_data;
-int final_used;
-int block_mask;
-unsigned char final[32];
-} EVP_CIPHER_CTX;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
 
 typedef struct env_md_ctx_st EVP_MD_CTX;
 typedef struct env_md_st EVP_MD;
@@ -75,8 +56,8 @@ const EVP_CIPHER *EVP_aes_256_cfb8(void);
 const EVP_CIPHER *EVP_aes_256_cfb128(void);
 const EVP_CIPHER *EVP_aes_256_ofb(void);
 
-void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
-int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
+EVP_CIPHER_CTX *EVP_CIPHER_CTX_new();
+void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
 
 int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher,
         ENGINE *impl, unsigned char *key, const unsigned char *iv);
@@ -98,8 +79,6 @@ int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
         const unsigned char *salt, const unsigned char *data, int datal,
         int count, unsigned char *key,unsigned char *iv);
 ]]
-
-local ctx_ptr_type = ffi.typeof("EVP_CIPHER_CTX[1]")
 
 local hash
 hash = {
@@ -126,8 +105,19 @@ end
 _M.cipher = cipher
 
 function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
-    local encrypt_ctx = ffi_new(ctx_ptr_type)
-    local decrypt_ctx = ffi_new(ctx_ptr_type)
+    local encrypt_ctx = C.EVP_CIPHER_CTX_new()
+    if encrypt_ctx == nil then
+        return nil, "no memory"
+    end
+
+    local decrypt_ctx = C.EVP_CIPHER_CTX_new()
+    if decrypt_ctx == nil then
+        return nil, "no memory"
+    end
+
+    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_free)
+    ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_free)
+
     local _cipher = _cipher or cipher()
     local _hash = _hash or hash.md5
     local hash_rounds = hash_rounds or 1
@@ -171,18 +161,12 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         end
     end
 
-    C.EVP_CIPHER_CTX_init(encrypt_ctx)
-    C.EVP_CIPHER_CTX_init(decrypt_ctx)
-
     if C.EVP_EncryptInit_ex(encrypt_ctx, _cipher.method, nil,
       gen_key, gen_iv) == 0 or
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
       gen_key, gen_iv) == 0 then
         return nil
     end
-
-    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
-    ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
 
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
