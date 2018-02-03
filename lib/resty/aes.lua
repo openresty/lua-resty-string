@@ -110,12 +110,13 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         return nil, "no memory"
     end
 
+    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_free)
+
     local decrypt_ctx = C.EVP_CIPHER_CTX_new()
     if decrypt_ctx == nil then
         return nil, "no memory"
     end
 
-    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_free)
     ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_free)
 
     local _cipher = _cipher or cipher()
