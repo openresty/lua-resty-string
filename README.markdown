@@ -169,6 +169,21 @@ Synopsis
     ngx.say("AES 128 CBC (WITH IV) Encrypted HEX: ", str.to_hex(encrypted))
     ngx.say("AES 128 CBC (WITH IV) Decrypted: ",
         aes_128_cbc_with_iv:decrypt(encrypted))
+        
+    local aes = require "resty.aes"
+    local str = require "resty.string"
+    local aes_128_gcm_with_iv = assert(aes:new("1234567890123456",
+                                            nil,
+                                            aes.cipher(128,"gcm"),
+                                            {iv="123456789012"}))
+    -- AES 128 GCM with IV and no SALT
+    local encrypted, tag = aes_128_gcm_with_iv:encrypt("Really secret message!")
+    ngx.say("AES 128 GCM (WITH IV) Encrypted HEX: ",
+             str.to_hex(encrypted),
+             " tag: ",
+             str.to_hex(tag))
+    ngx.say("AES 128 GCM (WITH IV) Decrypted: ",
+            aes_128_gcm_with_iv:decrypt(encrypted, tag))
 ```
 
 [Back to TOC](#table-of-contents)
