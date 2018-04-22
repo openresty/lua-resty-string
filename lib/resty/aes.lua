@@ -19,6 +19,11 @@ local mt = { __index = _M }
 
 
 ffi.cdef[[
+enum {
+    evp_ctrl_gcm_get_tag = 0x10,
+    evp_ctrl_gcm_set_tag = 0x11
+};
+
 typedef struct engine_st ENGINE;
 
 typedef struct evp_cipher_st EVP_CIPHER;
@@ -35,6 +40,7 @@ const EVP_MD *EVP_sha256(void);
 const EVP_MD *EVP_sha384(void);
 const EVP_MD *EVP_sha512(void);
 
+const EVP_CIPHER *EVP_aes_128_gcm(void);
 const EVP_CIPHER *EVP_aes_128_ecb(void);
 const EVP_CIPHER *EVP_aes_128_cbc(void);
 const EVP_CIPHER *EVP_aes_128_cfb1(void);
@@ -78,6 +84,8 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
         const unsigned char *salt, const unsigned char *data, int datal,
         int count, unsigned char *key,unsigned char *iv);
+
+int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
 ]]
 
 local hash
@@ -127,7 +135,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
     if type(_hash) == "table" then
-        if not _hash.iv or #_hash.iv ~= 16 then
+        if _cipher.cipher == "gcm" then
+            if (not _hash.iv or #_hash.iv ~= 12) then
+                return nil, "bad iv"
+            end
+        elseif not _hash.iv or #_hash.iv ~= 16 then
           return nil, "bad iv"
         end
 
@@ -147,7 +159,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
             ffi_copy(gen_key, key, _cipherLength)
         end
 
-        ffi_copy(gen_iv, _hash.iv, 16)
+        ffi_copy(gen_iv, _hash.iv, #_hash.iv)
 
     else
         if salt and #salt ~= 8 then
@@ -171,13 +183,16 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
 
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
-      _decrypt_ctx = decrypt_ctx
+      _decrypt_ctx = decrypt_ctx,
+      _cipher_mode = _cipher.cipher
       }, mt)
 end
 
 
 function _M.encrypt(self, s)
     local s_len = #s
+    local tag_len = 0
+    local tag = nil
     local max_len = s_len + 16
     local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
@@ -196,11 +211,25 @@ function _M.encrypt(self, s)
         return nil
     end
 
-    return ffi_str(buf, out_len[0] + tmp_len[0])
+    if self._cipher_mode == "gcm" then
+        tag_len = 16 -- gcm tag length
+        tag = ffi_new("unsigned char[?]", tag_len)
+        if C.EVP_CIPHER_CTX_ctrl(ctx,
+                                 C.evp_ctrl_gcm_get_tag,
+                                 tag_len,
+                                 tag) == 0 then
+            return nil
+        end
+    end
+
+    if tag then
+        return ffi_str(buf, out_len[0] + tmp_len[0]), ffi_str(tag, tag_len)
+    end
+        return ffi_str(buf, out_len[0] + tmp_len[0])
 end
 
 
-function _M.decrypt(self, s)
+function _M.decrypt(self, s, tag)
     local s_len = #s
     local buf = ffi_new("unsigned char[?]", s_len)
     local out_len = ffi_new("int[1]")
@@ -213,6 +242,21 @@ function _M.decrypt(self, s)
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
       return nil
+    end
+
+    if self._cipher_mode == "gcm" then
+        local tag_len = 16 -- gcm tag length
+        if #tag ~= tag_len then
+            return nil
+        end
+        local tmp_tag = ffi_new("unsigned char[?]", tag_len)
+        ffi_copy(tmp_tag, tag, tag_len)
+        if C.EVP_CIPHER_CTX_ctrl(ctx,
+                                 C.evp_ctrl_gcm_set_tag,
+                                 tag_len,
+                                 tmp_tag) == 0 then
+            return nil
+        end
     end
 
     if C.EVP_DecryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
