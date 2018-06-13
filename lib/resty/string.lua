@@ -25,10 +25,11 @@ local str_type = ffi.typeof("uint8_t[?]")
 
 
 function _M.to_hex(s)
-    local len = #s * 2
-    local buf = ffi_new(str_type, len)
-    C.ngx_hex_dump(buf, s, #s)
-    return ffi_str(buf, len)
+    local len = #s
+    local buf_len = len * 2
+    local buf = ffi_new(str_type, buf_len)
+    C.ngx_hex_dump(buf, s, len)
+    return ffi_str(buf, buf_len)
 end
 
 
