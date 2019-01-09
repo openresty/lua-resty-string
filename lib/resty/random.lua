@@ -9,7 +9,7 @@ local C = ffi.C
 --local error = error
 
 
-local _M = { _VERSION = '0.11' }
+local _M = { _VERSION = '0.12' }
 
 
 ffi.cdef[[

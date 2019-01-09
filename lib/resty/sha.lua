@@ -4,7 +4,7 @@
 local ffi = require "ffi"
 
 
-local _M = { _VERSION = '0.11' }
+local _M = { _VERSION = '0.12' }
 
 
 ffi.cdef[[
