@@ -78,6 +78,9 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
         const unsigned char *salt, const unsigned char *data, int datal,
         int count, unsigned char *key,unsigned char *iv);
+
+unsigned long ERR_get_error(void);
+void ERR_error_string_n(unsigned long e, char *buf, size_t len);
 ]]
 
 local hash
@@ -103,6 +106,18 @@ cipher = function (size, _cipher)
     end
 end
 _M.cipher = cipher
+
+local function get_error()
+    local errno = C.ERR_get_error()
+    if errno == 0 then
+        return nil
+    end
+
+    local msg = ffi_new("char[?]", 256)
+    C.ERR_error_string_n(errno, msg, 256)
+
+    return ffi_str(msg)
+end
 
 function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local encrypt_ctx = C.EVP_CIPHER_CTX_new()
@@ -158,7 +173,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
                             hash_rounds, gen_key, gen_iv)
             ~= _cipherLength
         then
-            return nil
+            return nil, get_error()
         end
     end
 
@@ -166,7 +181,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
       gen_key, gen_iv) == 0 or
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
       gen_key, gen_iv) == 0 then
-        return nil
+        return nil, get_error()
     end
 
     return setmetatable({
@@ -185,15 +200,15 @@ function _M.encrypt(self, s)
     local ctx = self._encrypt_ctx
 
     if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-        return nil
+        return nil, get_error()
     end
 
     if C.EVP_EncryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-        return nil
+        return nil, get_error()
     end
 
     if C.EVP_EncryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, get_error()
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])
@@ -208,15 +223,15 @@ function _M.decrypt(self, s)
     local ctx = self._decrypt_ctx
 
     if C.EVP_DecryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-      return nil
+      return nil, get_error()
     end
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-      return nil
+      return nil, get_error()
     end
 
     if C.EVP_DecryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, get_error()
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])

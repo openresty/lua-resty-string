@@ -293,3 +293,34 @@ failed to new: bad iv
 --- no_error_log
 [error]
 
+
+
+=== TEST 11: AES get error message
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local aes = require "resty.aes"
+
+            local aes_default, err = aes:new("secret")
+
+            if not aes_default then
+                ngx.say("failed to new: ", err)
+                return
+            end
+
+            local encrypted, err = aes_default:decrypt("hello")
+            if not encrypted then
+                if err then
+                    ngx.say(err)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+error:0606506D:digital envelope routines:EVP_DecryptFinal_ex:wrong final block length
+--- no_error_log
+[error]
+
