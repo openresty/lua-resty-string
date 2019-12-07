@@ -33,6 +33,16 @@ function _M.to_hex(s)
 end
 
 
+function _M.from_hex(s)
+    local hex_to_char = {}
+    for idx = 0, 255 do
+    hex_to_char[("%02X"):format(idx)] = string.char(idx)
+    hex_to_char[("%02x"):format(idx)] = string.char(idx)
+    end
+
+    return s:gsub("(..)", hex_to_char)
+end
+
 function _M.atoi(s)
     return tonumber(C.ngx_atoi(s, #s))
 end
