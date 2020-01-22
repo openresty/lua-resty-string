@@ -30,8 +30,8 @@ env:
   matrix:
     - NGINX_VERSION=1.13.6 OPENSSL_VER=1.0.2s
     - NGINX_VERSION=1.13.6 OPENSSL_VER=1.1.0k
-    - NGINX_VERSION=1.17.4 OPENSSL_VER=1.0.2s
-    - NGINX_VERSION=1.17.4 OPENSSL_VER=1.1.0k
+    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2s
+    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0k
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
