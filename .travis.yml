@@ -32,6 +32,9 @@ env:
     - NGINX_VERSION=1.13.6 OPENSSL_VER=1.1.0k
     - NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2s
     - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0k
+    - NGINX_VERSION=1.19.2 OPENSSL_VER=1.0.2s
+    - NGINX_VERSION=1.19.2 OPENSSL_VER=1.1.0k
+    - NGINX_VERSION=1.19.2 OPENSSL_VER=1.1.1g
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
@@ -45,7 +48,7 @@ install:
   - git clone https://github.com/openresty/lua-nginx-module.git ../lua-nginx-module
   - git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
   - git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
-  - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
+  - git clone -b 1.19.2.x https://github.com/xiaocang/no-pool-nginx.git ../no-pool-nginx
   - git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git
   - git clone https://github.com/openresty/mockeagain.git
 
