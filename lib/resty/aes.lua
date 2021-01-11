@@ -17,6 +17,9 @@ local _M = { _VERSION = '0.12' }
 
 local mt = { __index = _M }
 
+local EVP_CTRL_AEAD_SET_IVLEN = 0x09
+local EVP_CTRL_AEAD_GET_TAG = 0x10
+local EVP_CTRL_AEAD_SET_TAG = 0x11
 
 ffi.cdef[[
 typedef struct engine_st ENGINE;
@@ -55,6 +58,9 @@ const EVP_CIPHER *EVP_aes_256_cfb1(void);
 const EVP_CIPHER *EVP_aes_256_cfb8(void);
 const EVP_CIPHER *EVP_aes_256_cfb128(void);
 const EVP_CIPHER *EVP_aes_256_ofb(void);
+const EVP_CIPHER *EVP_aes_128_gcm(void);
+const EVP_CIPHER *EVP_aes_192_gcm(void);
+const EVP_CIPHER *EVP_aes_256_gcm(void);
 
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new();
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
@@ -79,6 +85,8 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_BytesToKey(const EVP_CIPHER *type,const EVP_MD *md,
         const unsigned char *salt, const unsigned char *data, int datal,
         int count, unsigned char *key,unsigned char *iv);
+
+int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
 ]]
 
 local hash
@@ -91,6 +99,8 @@ hash = {
     sha512 = C.EVP_sha512()
 }
 _M.hash = hash
+
+local EVP_MAX_BLOCK_LENGTH = 32
 
 local cipher
 cipher = function (size, _cipher)
@@ -105,7 +115,7 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len)
     local encrypt_ctx = C.EVP_CIPHER_CTX_new()
     if encrypt_ctx == nil then
         return nil, "no memory"
@@ -126,10 +136,20 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
+    iv_len = iv_len or _cipherLength
 
     if type(_hash) == "table" then
-        if not _hash.iv or #_hash.iv ~= 16 then
-          return nil, "bad iv"
+        if not _hash.iv then
+          return nil, "iv is needed"
+        end
+
+        --[[ Depending on the encryption algorithm, the length of iv will be
+          different. For detailed, please refer to
+          https://www.openssl.org/docs/man1.1.0/man3/EVP_CIPHER_CTX_ctrl.html
+        ]]
+        iv_len = #_hash.iv
+        if iv_len > _cipherLength then
+            return nil, "bad iv length"
         end
 
         if _hash.method then
@@ -148,7 +168,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
             ffi_copy(gen_key, key, _cipherLength)
         end
 
-        ffi_copy(gen_iv, _hash.iv, 16)
+        ffi_copy(gen_iv, _hash.iv, iv_len)
 
     else
         if salt and #salt ~= 8 then
@@ -159,15 +179,27 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
                             hash_rounds, gen_key, gen_iv)
             ~= _cipherLength
         then
-            return nil
+            return nil, "failed to generate key and iv"
         end
     end
 
     if C.EVP_EncryptInit_ex(encrypt_ctx, _cipher.method, nil,
-      gen_key, gen_iv) == 0 or
+      nil, nil) == 0 or
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
-      gen_key, gen_iv) == 0 then
-        return nil
+      nil, nil) == 0 then
+        return nil, "failed to init ctx"
+    end
+
+    local cipher_name = _cipher.cipher
+    if cipher_name == "gcm"
+      or cipher_name == "ccm"
+      or cipher_name == "ocb" then
+        if C.EVP_CIPHER_CTX_ctrl(encrypt_ctx, EVP_CTRL_AEAD_SET_IVLEN,
+         iv_len, nil) == 0 or
+         C.EVP_CIPHER_CTX_ctrl(decrypt_ctx, EVP_CTRL_AEAD_SET_IVLEN,
+         iv_len, nil) == 0 then
+            return nil, "failed to set IV length"
+         end
     end
 
     local encrypt_cipher_block_size = C.EVP_CIPHER_CTX_block_size(encrypt_ctx)
@@ -177,7 +209,10 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
       _encrypt_ctx = encrypt_ctx,
       _decrypt_ctx = decrypt_ctx,
       _encrypt_cipher_block_size = encrypt_cipher_block_size,
-      _decrypt_cipher_block_size = decrypt_cipher_block_size
+      _decrypt_cipher_block_size = decrypt_cipher_block_size,
+      _cipher = _cipher.cipher,
+      _key = gen_key,
+      _iv = gen_iv
       }, mt)
 end
 
@@ -191,23 +226,33 @@ function _M.encrypt(self, s)
     local tmp_len = ffi_new("int[1]")
     local ctx = self._encrypt_ctx
 
-    if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-        return nil
+    if C.EVP_EncryptInit_ex(ctx, nil, nil, self._key, self._iv) == 0 then
+        return nil, "EVP_EncryptInit_ex failed"
     end
 
     if C.EVP_EncryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-        return nil
+        return nil, "EVP_EncryptUpdate failed"
+    end
+
+    if self._cipher == "gcm" then
+        local encrypt_data = ffi_str(buf, out_len[0])
+        if C.EVP_EncryptFinal_ex(ctx, buf, out_len) == 0 then
+            return nil, "EVP_DecryptFinal_ex failed"
+        end
+        C.EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, buf);
+        local tag = ffi_str(buf, 16)
+        return {encrypt_data, tag}
     end
 
     if C.EVP_EncryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, "EVP_EncryptFinal_ex failed"
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])
 end
 
 
-function _M.decrypt(self, s)
+function _M.decrypt(self, s, tag)
     local s_len = #s
     local cipher_block_size = self._decrypt_cipher_block_size
     local max_len = s_len + 2 * cipher_block_size
@@ -216,16 +261,31 @@ function _M.decrypt(self, s)
     local tmp_len = ffi_new("int[1]")
     local ctx = self._decrypt_ctx
 
-    if C.EVP_DecryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-      return nil
+    if C.EVP_DecryptInit_ex(ctx, nil, nil, self._key, self._iv) == 0 then
+      return nil, "EVP_DecryptInit_ex failed"
     end
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-      return nil
+      return nil, "EVP_DecryptUpdate failed"
+    end
+
+    if self._cipher == "gcm" then
+        local plain_txt = ffi_str(buf, out_len[0])
+        if tag ~= nil then
+            local tag_buf = ffi_new("unsigned char[?]", 16)
+            ffi.copy(tag_buf, tag, 16)
+            C.EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, 16, tag_buf);
+        end
+
+        if C.EVP_DecryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
+            return nil, "EVP_DecryptFinal_ex failed"
+        end
+
+        return plain_txt
     end
 
     if C.EVP_DecryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, "EVP_DecryptFinal_ex failed"
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])
