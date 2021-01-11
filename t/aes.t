@@ -303,17 +303,18 @@ failed to new: bad iv
             local aes = require "resty.aes"
             local str = require "resty.string"
             local aes_default = aes:new("secret",nil,
-              aes.cipher(256,"gcm"),aes.hash.sha256,5)
+              aes.cipher(256,"gcm"),aes.hash.sha256, 1)
             local encrypted = aes_default:encrypt("hello")
-            ngx.say("AES-256 GCM SHA256: ", str.to_hex(encrypted))
-            local decrypted, err = aes_default:decrypt(encrypted)
+            ngx.say("AES-256 GCM SHA256: ", str.to_hex(encrypted[1]),
+                    " tag: ",  str.to_hex(encrypted[2]))
+            local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
             ngx.say(decrypted == "hello")
         ';
     }
 --- request
 GET /t
 --- response_body
-AES-256 GCM SHA256: 86428119ac
+AES-256 GCM SHA256: 4acef84443 tag: bcecc29fb0d8b5c895e21f6ea89681a2
 true
 --- no_error_log
 [error]
