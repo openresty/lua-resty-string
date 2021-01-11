@@ -54,4 +54,3 @@ GET /t
 ^res: [a-f0-9]{10}$
 --- no_error_log
 [error]
-

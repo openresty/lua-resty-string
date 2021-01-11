@@ -55,6 +55,9 @@ const EVP_CIPHER *EVP_aes_256_cfb1(void);
 const EVP_CIPHER *EVP_aes_256_cfb8(void);
 const EVP_CIPHER *EVP_aes_256_cfb128(void);
 const EVP_CIPHER *EVP_aes_256_ofb(void);
+const EVP_CIPHER *EVP_aes_128_gcm(void);
+const EVP_CIPHER *EVP_aes_192_gcm(void);
+const EVP_CIPHER *EVP_aes_256_gcm(void);
 
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new();
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
@@ -171,7 +174,8 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
 
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
-      _decrypt_ctx = decrypt_ctx
+      _decrypt_ctx = decrypt_ctx,
+      _cipher = _cipher.cipher
       }, mt)
 end
 
@@ -185,15 +189,15 @@ function _M.encrypt(self, s)
     local ctx = self._encrypt_ctx
 
     if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-        return nil
+        return nil, "EVP_EncryptInit_ex failed"
     end
 
     if C.EVP_EncryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-        return nil
+        return nil, "EVP_EncryptUpdate failed"
     end
 
     if C.EVP_EncryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, "EVP_EncryptFinal_ex failed"
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])
@@ -208,15 +212,19 @@ function _M.decrypt(self, s)
     local ctx = self._decrypt_ctx
 
     if C.EVP_DecryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
-      return nil
+      return nil, "EVP_DecryptInit_ex failed"
     end
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
-      return nil
+      return nil, "EVP_DecryptUpdate failed"
+    end
+
+    if self._cipher == "gcm" then
+        return ffi_str(buf, out_len[0])
     end
 
     if C.EVP_DecryptFinal_ex(ctx, buf + out_len[0], tmp_len) == 0 then
-        return nil
+        return nil, "EVP_DecryptFinal_ex failed"
     end
 
     return ffi_str(buf, out_len[0] + tmp_len[0])
