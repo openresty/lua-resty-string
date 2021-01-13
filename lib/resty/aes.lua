@@ -141,19 +141,11 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len)
           return nil, "iv is needed"
         end
 
-        --[[
-        EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, ivlen, NULL)
-            Sets the IV length. This call can only be made before specifying
-            an IV. If not called a default IV length is used.
+        --[[ Depending on the encryption algorithm, the length of iv will be
+          different. For detailed, please refer to
+          https://www.openssl.org/docs/man1.1.0/man3/EVP_CIPHER_CTX_ctrl.html
 
-            For GCM AES and OCB AES the default is 12 (i.e. 96 bits).
-            For OCB mode the maximum is 15.
-
-            or Sets the CCM nonce (IV) length. This call can only be made
-            before specifying an nonce value. The nonce length is given by
-            15 - L so it is 7 by default for AES.
         ]]
-
         iv_len = #_hash.iv
         if iv_len > _cipherLength then
             return nil, "bad iv length"
