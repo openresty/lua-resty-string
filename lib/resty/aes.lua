@@ -17,6 +17,7 @@ local _M = { _VERSION = '0.12' }
 
 local mt = { __index = _M }
 
+local EVP_CTRL_AEAD_SET_IVLEN = 0x09
 local EVP_CTRL_AEAD_GET_TAG = 0x10
 local EVP_CTRL_AEAD_SET_TAG = 0x11
 
@@ -112,7 +113,7 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len)
     local encrypt_ctx = C.EVP_CIPHER_CTX_new()
     if encrypt_ctx == nil then
         return nil, "no memory"
@@ -133,14 +134,28 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local _cipherLength = _cipher.size/8
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
+    iv_len = iv_len or _cipherLength
 
     if type(_hash) == "table" then
         if not _hash.iv then
           return nil, "iv is needed"
         end
 
-        local iv_len = #_hash.iv
-        if iv_len ~= 16 and iv_len ~= 12 or iv_len > _cipherLength then
+        --[[
+        EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, ivlen, NULL)
+            Sets the IV length. This call can only be made before specifying
+            an IV. If not called a default IV length is used.
+
+            For GCM AES and OCB AES the default is 12 (i.e. 96 bits).
+            For OCB mode the maximum is 15.
+
+            or Sets the CCM nonce (IV) length. This call can only be made
+            before specifying an nonce value. The nonce length is given by
+            15 - L so it is 7 by default for AES.
+        ]]
+
+        iv_len = #_hash.iv
+        if iv_len > _cipherLength then
             return nil, "bad iv length"
         end
 
@@ -171,21 +186,35 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
                             hash_rounds, gen_key, gen_iv)
             ~= _cipherLength
         then
-            return nil
+            return nil, "failed to generate key and iv"
         end
     end
 
     if C.EVP_EncryptInit_ex(encrypt_ctx, _cipher.method, nil,
-      gen_key, gen_iv) == 0 or
+      nil, nil) == 0 or
       C.EVP_DecryptInit_ex(decrypt_ctx, _cipher.method, nil,
-      gen_key, gen_iv) == 0 then
-        return nil
+      nil, nil) == 0 then
+        return nil, "failed to init ctx"
+    end
+
+    local cipher_name = _cipher.cipher
+    if cipher_name == "gcm"
+      or cipher_name == "ccm"
+      or cipher_name == "ocb" then
+        if C.EVP_CIPHER_CTX_ctrl(encrypt_ctx, EVP_CTRL_AEAD_SET_IVLEN,
+         iv_len, nil) == 0 or
+         C.EVP_CIPHER_CTX_ctrl(decrypt_ctx, EVP_CTRL_AEAD_SET_IVLEN,
+         iv_len, nil) == 0 then
+            return nil, "failed to set IV length"
+         end
     end
 
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
       _decrypt_ctx = decrypt_ctx,
-      _cipher = _cipher.cipher
+      _cipher = _cipher.cipher,
+      _key = gen_key,
+      _iv = gen_iv
       }, mt)
 end
 
@@ -198,7 +227,7 @@ function _M.encrypt(self, s)
     local tmp_len = ffi_new("int[1]")
     local ctx = self._encrypt_ctx
 
-    if C.EVP_EncryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
+    if C.EVP_EncryptInit_ex(ctx, nil, nil, self._key, self._iv) == 0 then
         return nil, "EVP_EncryptInit_ex failed"
     end
 
@@ -231,7 +260,7 @@ function _M.decrypt(self, s, tag)
     local tmp_len = ffi_new("int[1]")
     local ctx = self._decrypt_ctx
 
-    if C.EVP_DecryptInit_ex(ctx, nil, nil, nil, nil) == 0 then
+    if C.EVP_DecryptInit_ex(ctx, nil, nil, self._key, self._iv) == 0 then
       return nil, "EVP_DecryptInit_ex failed"
     end
 

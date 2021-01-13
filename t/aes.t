@@ -269,7 +269,7 @@ failed to new: bad key length
                 ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),
                 nil,
                 aes.cipher(128,"cbc"),
-                {iv = "hello"}
+                {iv = "helloworld&helloworld"}
             )
 
             if not aes_default then
@@ -295,7 +295,7 @@ failed to new: bad iv length
 
 
 
-=== TEST 11: AES-256 GCM sha256x1 no salt
+=== TEST 11: AES-256 GCM sha256 no salt
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -303,7 +303,7 @@ failed to new: bad iv length
             local aes = require "resty.aes"
             local str = require "resty.string"
             local aes_default = aes:new("secret",nil,
-              aes.cipher(256,"gcm"),aes.hash.sha256, 1)
+              aes.cipher(256,"gcm"), aes.hash.sha256, 1, 12)
             local encrypted = aes_default:encrypt("hello")
             ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
                     " tag: ",  str.to_hex(encrypted[2]))
@@ -321,7 +321,7 @@ true
 
 
 
-=== TEST 12: AES-256 GCM sha256x5 no salt
+=== TEST 12: AES-256 GCM with iv
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
