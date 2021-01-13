@@ -135,8 +135,13 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
 
     if type(_hash) == "table" then
-        if not _hash.iv or #_hash.iv ~= 16 then
-          return nil, "bad iv"
+        if not _hash.iv then
+          return nil, "iv is needed"
+        end
+
+        local iv_len = #_hash.iv
+        if iv_len ~= 16 and iv_len ~= 12 or iv_len > _cipherLength then
+            return nil, "bad iv length"
         end
 
         if _hash.method then
@@ -155,7 +160,7 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
             ffi_copy(gen_key, key, _cipherLength)
         end
 
-        ffi_copy(gen_iv, _hash.iv, 16)
+        ffi_copy(gen_iv, _hash.iv, iv_len)
 
     else
         if salt and #salt ~= 8 then

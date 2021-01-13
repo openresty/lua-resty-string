@@ -289,13 +289,13 @@ failed to new: bad key length
 --- request
 GET /t
 --- response_body
-failed to new: bad iv
+failed to new: bad iv length
 --- no_error_log
 [error]
 
 
 
-=== TEST 11: AES-256 GCM sha256x5 no salt
+=== TEST 11: AES-256 GCM sha256x1 no salt
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -305,7 +305,7 @@ failed to new: bad iv
             local aes_default = aes:new("secret",nil,
               aes.cipher(256,"gcm"),aes.hash.sha256, 1)
             local encrypted = aes_default:encrypt("hello")
-            ngx.say("AES-256 GCM SHA256: ", str.to_hex(encrypted[1]),
+            ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
                     " tag: ",  str.to_hex(encrypted[2]))
             local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
             ngx.say(decrypted == "hello")
@@ -314,7 +314,36 @@ failed to new: bad iv
 --- request
 GET /t
 --- response_body
-AES-256 GCM SHA256: 4acef84443 tag: bcecc29fb0d8b5c895e21f6ea89681a2
+AES-256 GCM: 4acef84443 tag: bcecc29fb0d8b5c895e21f6ea89681a2
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: AES-256 GCM sha256x5 no salt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new(
+                str.from_hex("40A4510F290AD8182AF4B0260C655F8511E5B46BCA20EA191D8BC7B4D99CE95F"),
+                nil,
+                aes.cipher(256,"gcm"),
+                {iv = str.from_hex("f31a8c01e125e4720481be05")}, 1)
+            local encrypted = aes_default:encrypt("13770713710")
+            ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
+                    " tag: ",  str.to_hex(encrypted[2]))
+            local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
+            ngx.say(decrypted == "13770713710")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+AES-256 GCM: 755eccf6aa0cd51d55ad0c tag: 9a61f5a3cc3089bbe7de00a3dd484a1d
 true
 --- no_error_log
 [error]
