@@ -332,7 +332,7 @@ true
                 str.from_hex("40A4510F290AD8182AF4B0260C655F8511E5B46BCA20EA191D8BC7B4D99CE95F"),
                 nil,
                 aes.cipher(256,"gcm"),
-                {iv = str.from_hex("f31a8c01e125e4720481be05")}, 1)
+                {iv = str.from_hex("f31a8c01e125e4720481be05")})
             local encrypted = aes_default:encrypt("13770713710")
             ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
                     " tag: ",  str.to_hex(encrypted[2]))
