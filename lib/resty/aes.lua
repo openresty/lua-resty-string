@@ -58,6 +58,7 @@ const EVP_CIPHER *EVP_aes_256_ofb(void);
 
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new();
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
+int EVP_CIPHER_CTX_block_size(const EVP_CIPHER_CTX *ctx);
 
 int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,const EVP_CIPHER *cipher,
         ENGINE *impl, unsigned char *key, const unsigned char *iv);
@@ -169,16 +170,22 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds)
         return nil
     end
 
+    local encrypt_cipher_block_size = C.EVP_CIPHER_CTX_block_size(encrypt_ctx)
+    local decrypt_cipher_block_size = C.EVP_CIPHER_CTX_block_size(decrypt_ctx)
+
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
-      _decrypt_ctx = decrypt_ctx
+      _decrypt_ctx = decrypt_ctx,
+      _encrypt_cipher_block_size = encrypt_cipher_block_size,
+      _decrypt_cipher_block_size = decrypt_cipher_block_size
       }, mt)
 end
 
 
 function _M.encrypt(self, s)
     local s_len = #s
-    local max_len = s_len + 16
+    local cipher_block_size = self._encrypt_cipher_block_size
+    local max_len = s_len + 2 * cipher_block_size
     local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
@@ -202,7 +209,9 @@ end
 
 function _M.decrypt(self, s)
     local s_len = #s
-    local buf = ffi_new("unsigned char[?]", s_len)
+    local cipher_block_size = self._decrypt_cipher_block_size
+    local max_len = s_len + 2 * cipher_block_size
+    local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
     local ctx = self._decrypt_ctx
