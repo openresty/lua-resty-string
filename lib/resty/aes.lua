@@ -202,14 +202,9 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len)
          end
     end
 
-    local encrypt_cipher_block_size = C.EVP_CIPHER_CTX_block_size(encrypt_ctx)
-    local decrypt_cipher_block_size = C.EVP_CIPHER_CTX_block_size(decrypt_ctx)
-
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
       _decrypt_ctx = decrypt_ctx,
-      _encrypt_cipher_block_size = encrypt_cipher_block_size,
-      _decrypt_cipher_block_size = decrypt_cipher_block_size,
       _cipher = _cipher.cipher,
       _key = gen_key,
       _iv = gen_iv
@@ -219,8 +214,7 @@ end
 
 function _M.encrypt(self, s)
     local s_len = #s
-    local cipher_block_size = self._encrypt_cipher_block_size
-    local max_len = s_len + 2 * cipher_block_size
+    local max_len = s_len + 2 * EVP_MAX_BLOCK_LENGTH
     local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
@@ -254,8 +248,7 @@ end
 
 function _M.decrypt(self, s, tag)
     local s_len = #s
-    local cipher_block_size = self._decrypt_cipher_block_size
-    local max_len = s_len + 2 * cipher_block_size
+    local max_len = s_len + 2 * EVP_MAX_BLOCK_LENGTH
     local buf = ffi_new("unsigned char[?]", max_len)
     local out_len = ffi_new("int[1]")
     local tmp_len = ffi_new("int[1]")
