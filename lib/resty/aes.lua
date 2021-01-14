@@ -233,6 +233,10 @@ function _M.encrypt(self, s)
         if C.EVP_EncryptFinal_ex(ctx, buf, out_len) == 0 then
             return nil, "EVP_DecryptFinal_ex failed"
         end
+
+        -- FIXME: For OCB mode the taglen must either be 16
+        -- or the value previously set via EVP_CTRL_OCB_SET_TAGLEN.
+        -- so we should extend this api in the future
         C.EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, buf);
         local tag = ffi_str(buf, 16)
         return {encrypt_data, tag}
