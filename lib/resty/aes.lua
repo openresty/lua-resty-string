@@ -213,6 +213,11 @@ end
 
 
 function _M.encrypt(self, s)
+    local typ = type(self)
+    if typ ~= "table" then
+        error("bad argument #1 self: table expected, got " .. typ, 2)
+    end
+
     local s_len = #s
     local max_len = s_len + 2 * EVP_MAX_BLOCK_LENGTH
     local buf = ffi_new("unsigned char[?]", max_len)
@@ -251,6 +256,11 @@ end
 
 
 function _M.decrypt(self, s, tag)
+    local typ = type(self)
+    if typ ~= "table" then
+        error("bad argument #1 self: table expected, got " .. typ, 2)
+    end
+
     local s_len = #s
     local max_len = s_len + 2 * EVP_MAX_BLOCK_LENGTH
     local buf = ffi_new("unsigned char[?]", max_len)

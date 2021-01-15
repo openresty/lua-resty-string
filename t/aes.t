@@ -352,3 +352,48 @@ AES-256 GCM: 755eccf6aa0cd51d55ad0c tag: 9a61f5a3cc3089bbe7de00a3dd484a1d
 true
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: AES-256 GCM sha256 no salt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new("secret",nil,
+              aes.cipher(256,"gcm"), aes.hash.sha256, 1, 12)
+            local encrypted = aes_default.encrypt("hello")
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- response_body eval
+qr/500 Internal Server Error/
+--- error_log eval
+qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.conf:\d+\):6: bad argument #1 self: table expected, got string/ms
+
+
+
+=== TEST 14: AES-256 GCM sha256 no salt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new("secret",nil,
+              aes.cipher(256,"gcm"), aes.hash.sha256, 1, 12)
+            local encrypted = aes_default.encrypt("hello")
+            local decrypted, err = aes_default.decrypt(encrypted[1], encrypted[2])
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- response_body eval
+qr/500 Internal Server Error/
+--- error_log eval
+qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.conf:\d+\):6: bad argument #1 self: table expected, got string/ms
