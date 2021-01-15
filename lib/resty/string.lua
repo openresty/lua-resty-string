@@ -32,7 +32,6 @@ function _M.to_hex(s)
     return ffi_str(buf, buf_len)
 end
 
-
 function _M.atoi(s)
     return tonumber(C.ngx_atoi(s, #s))
 end

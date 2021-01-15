@@ -269,7 +269,7 @@ failed to new: bad key length
                 ngx.decode_base64("Xr4ilOzQ4PCOq3aQ0qbuaQ=="),
                 nil,
                 aes.cipher(128,"cbc"),
-                {iv = "hello"}
+                {iv = "helloworld&helloworld"}
             )
 
             if not aes_default then
@@ -289,7 +289,66 @@ failed to new: bad key length
 --- request
 GET /t
 --- response_body
-failed to new: bad iv
+failed to new: bad iv length
 --- no_error_log
 [error]
 
+
+
+=== TEST 11: AES-256 GCM sha256 no salt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new("secret",nil,
+              aes.cipher(256,"gcm"), aes.hash.sha256, 1, 12)
+            local encrypted = aes_default:encrypt("hello")
+            ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
+                    " tag: ",  str.to_hex(encrypted[2]))
+            local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
+            ngx.say(decrypted == "hello")
+        }
+    }
+--- request
+GET /t
+--- response_body
+AES-256 GCM: 4acef84443 tag: bcecc29fb0d8b5c895e21f6ea89681a2
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: AES-256 GCM with iv
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local function from_hex(s)
+                return (s:gsub('..', function (cc)
+                    return string.char(tonumber(cc, 16))
+                end))
+            end
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local aes_default = aes:new(
+                from_hex("40A4510F290AD8182AF4B0260C655F8511E5B46BCA20EA191D8BC7B4D99CE95F"),
+                nil,
+                aes.cipher(256,"gcm"),
+                {iv = from_hex("f31a8c01e125e4720481be05")})
+            local encrypted = aes_default:encrypt("13770713710")
+            ngx.say("AES-256 GCM: ", str.to_hex(encrypted[1]),
+                    " tag: ",  str.to_hex(encrypted[2]))
+            local decrypted, err = aes_default:decrypt(encrypted[1], encrypted[2])
+            ngx.say(decrypted == "13770713710")
+        }
+    }
+--- request
+GET /t
+--- response_body
+AES-256 GCM: 755eccf6aa0cd51d55ad0c tag: 9a61f5a3cc3089bbe7de00a3dd484a1d
+true
+--- no_error_log
+[error]
