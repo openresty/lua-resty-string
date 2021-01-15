@@ -32,12 +32,6 @@ function _M.to_hex(s)
     return ffi_str(buf, buf_len)
 end
 
-function _M.from_hex(s)
-    return (s:gsub('..', function (cc)
-        return string.char(tonumber(cc, 16))
-    end))
-end
-
 function _M.atoi(s)
     return tonumber(C.ngx_atoi(s, #s))
 end
