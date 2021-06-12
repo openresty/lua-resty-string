@@ -23,11 +23,17 @@ intptr_t ngx_atoi(const unsigned char *line, size_t n);
 
 local str_type = ffi.typeof("uint8_t[?]")
 
-
+local BUF_MAX_LEN = 1024
+local hex_buf = ffi_new(str_type, BUF_MAX_LEN)
 function _M.to_hex(s)
     local len = #s
     local buf_len = len * 2
-    local buf = ffi_new(str_type, buf_len)
+    local buf
+    if buf_len <= BUF_MAX_LEN then
+        buf = hex_buf
+    else
+        buf = ffi_new(str_type, buf_len)
+    end
     C.ngx_hex_dump(buf, s, len)
     return ffi_str(buf, buf_len)
 end
