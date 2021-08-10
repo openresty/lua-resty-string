@@ -4,7 +4,7 @@ use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+plan tests => repeat_each() * (3 * blocks() + 1);
 
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
@@ -408,12 +408,22 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
-            local aes_default = aes:new(
-                key, nil,
-                aes.cipher(256,"cbc"),
-                {iv = string.sub(key, 1, 16)}, nil,
-                nil, 0
+
+            local aes_256_cbc_with_bad_padding, err = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, "bad")
+            if not aes_256_cbc_with_bad_padding then
+                ngx.log(ngx.WARN, err)
+            end
+
+            local aes_256_cbc_with_padding = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, 0
             )
+            if not aes_256_cbc_with_padding then
+                ngx.log(ngx.ERR, err)
+                return
+            end
 
             local text = "hello"
             local block_size = 32
@@ -421,10 +431,10 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             ngx.say("pad: ", pad)
 
             local text_paded = text .. string.rep(string.char(pad), pad)
-            local encrypted = aes_default:encrypt(text_paded)
+            local encrypted = aes_256_cbc_with_padding:encrypt(text_paded)
             ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
 
-            local decrypted = aes_default:decrypt(encrypted)
+            local decrypted = aes_256_cbc_with_padding:decrypt(encrypted)
             local pad = string.byte(string.sub(decrypted, #decrypted))
             ngx.say("pad: ", pad)
 
@@ -441,3 +451,5 @@ pad: 27
 true
 --- no_error_log
 [error]
+--- error_log
+padding must be a number

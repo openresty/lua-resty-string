@@ -141,6 +141,10 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
     iv_len = iv_len or _cipherLength
     padding = padding or 1
 
+    if type(padding) ~= 'number' then
+        return nil, "padding must be a number"
+    end
+
     if type(_hash) == "table" then
         if not _hash.iv then
           return nil, "iv is needed"
