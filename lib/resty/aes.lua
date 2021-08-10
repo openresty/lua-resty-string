@@ -213,8 +213,8 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
         return nil, "failed to set padding for decrypt context"
     end
 
-    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
-    ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_cleanup)
+    ffi_gc(encrypt_ctx, C.EVP_CIPHER_CTX_free)
+    ffi_gc(decrypt_ctx, C.EVP_CIPHER_CTX_free)
 
     return setmetatable({
       _encrypt_ctx = encrypt_ctx,
