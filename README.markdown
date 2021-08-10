@@ -182,7 +182,8 @@ Synopsis
     local pad = block_size - #text % 32
     local text_paded = text .. string.rep(string.char(pad), pad)
     local encrypted = aes_default:encrypt(text_paded)
-    ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
+    ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ",
+        str.to_hex(encrypted))
 ```
 
 [Back to TOC](#table-of-contents)
