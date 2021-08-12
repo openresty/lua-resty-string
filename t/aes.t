@@ -4,7 +4,7 @@ use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 1);
+plan tests => repeat_each() * (3 * blocks());
 
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
@@ -409,16 +409,9 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
 
-            local aes_256_cbc_with_bad_padding, err = aes:new(
-                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
-                nil, nil, "bad")
-            if not aes_256_cbc_with_bad_padding then
-                ngx.log(ngx.WARN, err)
-            end
-
             local aes_256_cbc_with_padding = aes:new(
                 key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
-                nil, nil, 0
+                nil, nil, false
             )
             if not aes_256_cbc_with_padding then
                 ngx.log(ngx.ERR, err)
@@ -451,5 +444,3 @@ pad: 27
 true
 --- no_error_log
 [error]
---- error_log
-padding must be a number

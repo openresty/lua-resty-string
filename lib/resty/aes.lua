@@ -117,7 +117,7 @@ cipher = function (size, _cipher)
 end
 _M.cipher = cipher
 
-function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
+function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, enable_padding)
     local encrypt_ctx = C.EVP_CIPHER_CTX_new()
     if encrypt_ctx == nil then
         return nil, "no memory"
@@ -139,11 +139,8 @@ function _M.new(self, key, salt, _cipher, _hash, hash_rounds, iv_len, padding)
     local gen_key = ffi_new("unsigned char[?]",_cipherLength)
     local gen_iv = ffi_new("unsigned char[?]",_cipherLength)
     iv_len = iv_len or _cipherLength
-    padding = padding or 1
-
-    if type(padding) ~= 'number' then
-        return nil, "padding must be a number"
-    end
+    -- enable padding by default
+    local padding = (enable_padding == nil or enable_padding) and 1 or 0
 
     if type(_hash) == "table" then
         if not _hash.iv then
