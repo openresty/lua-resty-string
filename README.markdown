@@ -172,16 +172,16 @@ Synopsis
 
     local aes = require "resty.aes"
     local str = require "resty.string"
-    local padding = 0
+    local enable_padding = false
     local aes_256_cbc_with_padding = aes:new(
         key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)}, nil,
-        nil, padding)
+        nil, enable_padding)
         -- AES-256 CBC (custom keygen, user padding with block_size=32)
     local text = "hello"
     local block_size = 32
     local pad = block_size - #text % 32
     local text_paded = text .. string.rep(string.char(pad), pad)
-    local encrypted = aes_default:encrypt(text_paded)
+    local encrypted = aes_256_cbc_with_padding:encrypt(text_paded)
     ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ",
         str.to_hex(encrypted))
 ```
