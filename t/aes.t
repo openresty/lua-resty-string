@@ -4,7 +4,7 @@ use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+plan tests => repeat_each() * (3 * blocks() + 1);
 
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
@@ -409,25 +409,60 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
 
-            local aes_256_cbc_with_padding = aes:new(
+            local text = "hello"
+            local block_size = 32
+            local pad = block_size - #text % block_size
+            ngx.say("pad: ", pad)
+            local text_paded = text .. string.rep(string.char(pad), pad)
+
+            -- enable padding
+            local aes_256_cbc_with_padding, err = aes:new(
                 key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
-                nil, nil, false
+                nil, nil, true
             )
             if not aes_256_cbc_with_padding then
                 ngx.log(ngx.ERR, err)
                 return
             end
 
-            local text = "hello"
-            local block_size = 32
-            local pad = block_size - #text % 32
-            ngx.say("pad: ", pad)
+            local encrypted_unpaded_text, err = aes_256_cbc_with_padding:encrypt(text)
+            if not encrypted_unpaded_text then
+                ngx.log(ngx.ERR, err)
+            end
 
-            local text_paded = text .. string.rep(string.char(pad), pad)
-            local encrypted = aes_256_cbc_with_padding:encrypt(text_paded)
-            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32) HEX: ", str.to_hex(encrypted))
+            local encrypted_with_aes_padding, err = aes_256_cbc_with_padding:encrypt(text_paded)
+            if not encrypted_with_aes_padding then
+                ngx.log(ngx.ERR, err)
+            end
+            -- padding will always be added, so `len = text_paded + padding_block_size`
+            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32, enable padding) HEX: ",
+                str.to_hex(encrypted_with_aes_padding),
+                ", len: ", string.len(encrypted_with_aes_padding))
 
-            local decrypted = aes_256_cbc_with_padding:decrypt(encrypted)
+            -- disable padding
+            local aes_256_cbc_without_padding, err = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, false
+            )
+            if not aes_256_cbc_without_padding then
+                ngx.log(ngx.WARN, err)
+                return
+            end
+
+            local encrypted_unpaded_text, err = aes_256_cbc_without_padding:encrypt(text)
+            if not encrypted_unpaded_text then
+                ngx.log(ngx.WARN, err)
+            end
+
+            local encrypted_without_aes_padding, err = aes_256_cbc_without_padding:encrypt(text_paded)
+            if not encrypted_without_aes_padding then
+                ngx.log(ngx.ERR, err)
+            end
+            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32, disable padding) HEX: ",
+                str.to_hex(encrypted_without_aes_padding),
+                ", len: ", string.len(encrypted_without_aes_padding))
+
+            local decrypted = aes_256_cbc_without_padding:decrypt(encrypted_without_aes_padding)
             local pad = string.byte(string.sub(decrypted, #decrypted))
             ngx.say("pad: ", pad)
 
@@ -439,8 +474,11 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
 GET /t
 --- response_body
 pad: 27
-AES-256 CBC (custom keygen, user padding with block_size=32) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1
+AES-256 CBC (custom keygen, user padding with block_size=32, enable padding) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d15c54a6a02e960ce527a28c8551adfdff, len: 48
+AES-256 CBC (custom keygen, user padding with block_size=32, disable padding) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1, len: 32
 pad: 27
 true
 --- no_error_log
 [error]
+--- error_log
+EVP_EncryptFinal_ex failed
