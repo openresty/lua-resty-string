@@ -4,7 +4,7 @@ use Test::Nginx::Socket::Lua;
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 1);
+plan tests => repeat_each() * (3 * blocks());
 
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
@@ -413,33 +413,8 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local block_size = 32
             local pad = block_size - #text % block_size
             ngx.say("pad: ", pad)
-            local text_paded = text .. string.rep(string.char(pad), pad)
+            local text_padded = text .. string.rep(string.char(pad), pad)
 
-            -- enable padding
-            local aes_256_cbc_with_padding, err = aes:new(
-                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
-                nil, nil, true
-            )
-            if not aes_256_cbc_with_padding then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-
-            local encrypted_unpaded_text, err = aes_256_cbc_with_padding:encrypt(text)
-            if not encrypted_unpaded_text then
-                ngx.log(ngx.ERR, err)
-            end
-
-            local encrypted_with_aes_padding, err = aes_256_cbc_with_padding:encrypt(text_paded)
-            if not encrypted_with_aes_padding then
-                ngx.log(ngx.ERR, err)
-            end
-            -- padding will always be added, so `len = text_paded + padding_block_size`
-            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32, enable padding) HEX: ",
-                str.to_hex(encrypted_with_aes_padding),
-                ", len: ", string.len(encrypted_with_aes_padding))
-
-            -- disable padding
             local aes_256_cbc_without_padding, err = aes:new(
                 key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
                 nil, nil, false
@@ -449,12 +424,7 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
                 return
             end
 
-            local encrypted_unpaded_text, err = aes_256_cbc_without_padding:encrypt(text)
-            if not encrypted_unpaded_text then
-                ngx.log(ngx.WARN, err)
-            end
-
-            local encrypted_without_aes_padding, err = aes_256_cbc_without_padding:encrypt(text_paded)
+            local encrypted_without_aes_padding, err = aes_256_cbc_without_padding:encrypt(text_padded)
             if not encrypted_without_aes_padding then
                 ngx.log(ngx.ERR, err)
             end
@@ -466,7 +436,61 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
             local pad = string.byte(string.sub(decrypted, #decrypted))
             ngx.say("pad: ", pad)
 
-            local decrypted_text = string.sub(decrypted, 1, #decrypted-pad)
+            local decrypted_text = string.sub(decrypted, 1, #decrypted - pad)
+            ngx.say(decrypted_text == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+pad: 27
+AES-256 CBC (custom keygen, user padding with block_size=32, disable padding) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1, len: 32
+pad: 27
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: AES-256 CBC custom keygen, enable padding (default)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
+
+            local text = "hello"
+            local block_size = 32
+            local pad = block_size - #text % block_size
+            ngx.say("pad: ", pad)
+            local text_padded = text .. string.rep(string.char(pad), pad)
+
+            local aes_256_cbc_with_padding, err = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, true
+            )
+            if not aes_256_cbc_with_padding then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local encrypted_with_aes_padding, err = aes_256_cbc_with_padding:encrypt(text_padded)
+            if not encrypted_with_aes_padding then
+                ngx.log(ngx.ERR, err)
+            end
+
+            -- padding will always be added, so `len = text_padded + padding_block_size`
+            ngx.say("AES-256 CBC (custom keygen, user padding with block_size=32, enable padding) HEX: ",
+                str.to_hex(encrypted_with_aes_padding),
+                ", len: ", string.len(encrypted_with_aes_padding))
+
+            local decrypted = aes_256_cbc_with_padding:decrypt(encrypted_with_aes_padding)
+            local pad = string.byte(string.sub(decrypted, #decrypted))
+            ngx.say("pad: ", pad)
+
+            local decrypted_text = string.sub(decrypted, 1, #decrypted - pad)
             ngx.say(decrypted_text == "hello")
         ';
     }
@@ -475,10 +499,65 @@ GET /t
 --- response_body
 pad: 27
 AES-256 CBC (custom keygen, user padding with block_size=32, enable padding) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d15c54a6a02e960ce527a28c8551adfdff, len: 48
-AES-256 CBC (custom keygen, user padding with block_size=32, disable padding) HEX: eebf8ca13072beede75c595a11b7fb0beffb7ccfb03f72d08456b555610172d1, len: 32
 pad: 27
 true
 --- no_error_log
 [error]
---- error_log
-EVP_EncryptFinal_ex failed
+
+
+
+=== TEST 17: AES-256 CBC custom keygen, without user padding
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local aes = require "resty.aes"
+            local str = require "resty.string"
+            local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
+
+            local text = "hello"
+            local aes_256_cbc_without_padding, err = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, false
+            )
+            if not aes_256_cbc_without_padding then
+                ngx.log(ngx.WARN, err)
+                return
+            end
+
+            local encrypted_unpadded_text, err = aes_256_cbc_without_padding:encrypt(text)
+            if not encrypted_unpadded_text then
+                ngx.say("ERROR: unpadded text: ", err)
+            end
+
+            local aes_256_cbc_with_padding, err = aes:new(
+                key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)},
+                nil, nil, true
+            )
+            if not aes_256_cbc_with_padding then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local encrypted_text, err = aes_256_cbc_with_padding:encrypt(text)
+            if not encrypted_text then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            ngx.say("AES-256 CBC (custom keygen, without user padding, enable padding) HEX: ",
+                str.to_hex(encrypted_text),
+                ", len: ", string.len(encrypted_text))
+
+            local decrypted = aes_256_cbc_with_padding:decrypt(encrypted_text)
+            ngx.say(decrypted == "hello")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+ERROR: unpadded text: EVP_EncryptFinal_ex failed
+AES-256 CBC (custom keygen, without user padding, enable padding) HEX: 794617717c15d28cc729b983cb9d2257, len: 16
+true
+--- no_error_log
+[error]
