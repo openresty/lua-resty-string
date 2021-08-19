@@ -400,11 +400,11 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
 
 
 
-=== TEST 15: AES-256 CBC custom keygen, user padding (without method)
+=== TEST 15: AES-256 CBC, user padding string + disable padding for aes object
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
@@ -438,7 +438,7 @@ qr/\[error\] .*? lua entry thread aborted: runtime error: content_by_lua\(nginx.
 
             local decrypted_text = string.sub(decrypted, 1, #decrypted - pad)
             ngx.say(decrypted_text == "hello")
-        ';
+        }
     }
 --- request
 GET /t
@@ -452,11 +452,11 @@ true
 
 
 
-=== TEST 16: AES-256 CBC custom keygen, enable padding (default)
+=== TEST 16: AES-256 CBC, user padding string + enable padding (default) for aes object, encrypted string will be longer due to auto padding
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
@@ -492,7 +492,7 @@ true
 
             local decrypted_text = string.sub(decrypted, 1, #decrypted - pad)
             ngx.say(decrypted_text == "hello")
-        ';
+        }
     }
 --- request
 GET /t
@@ -506,11 +506,11 @@ true
 
 
 
-=== TEST 17: AES-256 CBC custom keygen, without user padding
+=== TEST 17: AES-256 CBC, string without user padding + disable padding for aes object
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local aes = require "resty.aes"
             local str = require "resty.string"
             local key = ngx.decode_base64("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG=")
@@ -551,7 +551,7 @@ true
 
             local decrypted = aes_256_cbc_with_padding:decrypt(encrypted_text)
             ngx.say(decrypted == "hello")
-        ';
+        }
     }
 --- request
 GET /t
