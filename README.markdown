@@ -82,7 +82,8 @@ Synopsis
         return
     end
 
-    ok = md5:update("lo")
+        -- md5:update() with an optional "len" parameter
+    ok = md5:update("loxxx", 2)
     if not ok then
         ngx.say("failed to add data")
         return

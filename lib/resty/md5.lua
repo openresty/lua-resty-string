@@ -49,8 +49,8 @@ function _M.new(self)
 end
 
 
-function _M.update(self, s)
-    return C.MD5_Update(self._ctx, s, #s) == 1
+function _M.update(self, s, len)
+    return C.MD5_Update(self._ctx, s, len or #s) == 1
 end
 
 
