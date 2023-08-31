@@ -277,7 +277,7 @@ function _M.encrypt(self, s, aad)
 end
 
 
-function _M.decrypt(self, s, tag)
+function _M.decrypt(self, s, tag, aad)
     local typ = type(self)
     if typ ~= "table" then
         error("bad argument #1 self: table expected, got " .. typ, 2)
