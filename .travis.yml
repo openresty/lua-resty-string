@@ -1,6 +1,10 @@
 sudo: required
 dist: focal 
 
+branches:
+  only:
+    - "master"
+
 os: linux
 
 language: c
@@ -27,8 +31,7 @@ env:
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.25.1 OPENSSL_VER=1.1.0l
-    - NGINX_VERSION=1.25.1 OPENSSL_VER=1.1.1l
+    - NGINX_VERSION=1.25.3 OPENSSL_VER=1.1.1u
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
