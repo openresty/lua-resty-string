@@ -243,9 +243,7 @@ function _M.encrypt(self, s, aad)
 
     if self._cipher == "gcm" then
         if aad ~= nil then
-            local aad_buf = ffi_new("unsigned char[?]", #aad)
-            ffi.copy(aad_buf, aad, #aad)
-            if C.EVP_EncryptUpdate(ctx, nil, tmp_len, aad_buf, #aad) == 0 then
+            if C.EVP_EncryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
                 return nil, "C.EVP_EncryptUpdate failed"
             end
         end
@@ -296,9 +294,7 @@ function _M.decrypt(self, s, tag, aad)
 
     if self._cipher == "gcm" then
         if aad ~= nil then
-            local aad_buf = ffi_new("unsigned char[?]", #aad)
-            ffi.copy(aad_buf, aad, #aad)
-            if C.EVP_DecryptUpdate(ctx, nil, tmp_len, aad_buf, #aad) == 0 then
+            if C.EVP_DecryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
                 return nil, "C.EVP_DecryptUpdate failed"
             end
         end
