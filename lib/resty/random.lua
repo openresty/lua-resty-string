@@ -19,6 +19,9 @@ int RAND_pseudo_bytes(unsigned char *buf, int num);
 
 
 function _M.bytes(len, strong)
+    if strong == nil then
+        strong = true
+    end
     local buf = ffi_new("char[?]", len)
     if strong then
         if C.RAND_bytes(buf, len) == 0 then
