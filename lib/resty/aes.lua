@@ -291,9 +291,9 @@ function _M.decrypt(self, s, tag, aad)
     end
 
     if self._cipher == "gcm" and aad ~= nil then
-            if C.EVP_DecryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
-                return nil, "C.EVP_DecryptUpdate failed"
-            end
+        if C.EVP_DecryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
+            return nil, "C.EVP_DecryptUpdate failed"
+        end
     end
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then
