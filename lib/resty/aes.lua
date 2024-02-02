@@ -241,11 +241,9 @@ function _M.encrypt(self, s, aad)
         return nil, "EVP_EncryptInit_ex failed"
     end
 
-    if self._cipher == "gcm" then
-        if aad ~= nil then
-            if C.EVP_EncryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
-                return nil, "C.EVP_EncryptUpdate failed"
-            end
+    if self._cipher == "gcm" and aad ~= nil then
+        if C.EVP_EncryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
+            return nil, "C.EVP_EncryptUpdate failed"
         end
     end
 
@@ -292,12 +290,10 @@ function _M.decrypt(self, s, tag, aad)
       return nil, "EVP_DecryptInit_ex failed"
     end
 
-    if self._cipher == "gcm" then
-        if aad ~= nil then
+    if self._cipher == "gcm" and aad ~= nil then
             if C.EVP_DecryptUpdate(ctx, nil, tmp_len, aad, #aad) == 0 then
                 return nil, "C.EVP_DecryptUpdate failed"
             end
-        end
     end
 
     if C.EVP_DecryptUpdate(ctx, buf, out_len, s, s_len) == 0 then

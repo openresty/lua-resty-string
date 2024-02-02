@@ -562,6 +562,8 @@ true
 --- no_error_log
 [error]
 
+
+
 === TEST 18: AES-256 GCM sha256 no salt with AAD
 --- http_config eval: $::HttpConfig
 --- config
