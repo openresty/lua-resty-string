@@ -1,0 +1,23 @@
+lua-resty-string (0.09-1ppa1~trusty1) trusty; urgency=low
+
+  * Rebuild for trusty serie
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Mon, 15 Jan 2015 11:07:00 -0200
+
+lua-resty-string (0.09-1ppa1~precise2) precise; urgency=low
+
+  * Fix serie information in changelog
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Mon, 6 Jan 2015 17:03:00 -0200
+
+lua-resty-string (0.09-1ppa1~precise1) precise; urgency=low
+
+  * Add ppa1 suffix and precise serie information
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Mon, 6 Jan 2015 16:40:00 -0200
+
+lua-resty-string (0.09-1) trusty; urgency=low
+
+  * Add debian packaging info
+
+ -- Osvaldo Santana Neto <osvaldo.neto@titansgroup.com.br>  Tue, 16 Dec 2014 16:10:00 -0300
