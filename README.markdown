@@ -175,9 +175,9 @@ Synopsis
     local str = require "resty.string"
     local enable_padding = false
     local aes_256_cbc_with_padding = aes:new(
-        key, nil, aes.cipher(256,"cbc"), {iv = string.sub(key, 1, 16)}, nil,
-        nil, enable_padding)
-        -- AES-256 CBC (custom keygen, user padding with block_size=32)
+        key, nil, aes.cipher(256,"cbc"), nil, nil, {iv = string.sub(key, 1, 16)}, enable_padding
+    )
+    -- AES-256 CBC (custom keygen, user padding with block_size=32)
     local text = "hello"
     local block_size = 32
     local pad = block_size - #text % 32
