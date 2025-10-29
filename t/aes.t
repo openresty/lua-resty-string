@@ -100,6 +100,7 @@ true
             ngx.say(res, ", ", err)
             res, err = aes:new("secret","abc")
             ngx.say(res, ", ", err)
+            collectgarbage("collect")
         ';
     }
 --- request
