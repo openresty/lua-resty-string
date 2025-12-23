@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        nginx-version: [1.29.2]
+        nginx-version: [1.29.4]
         openssl-version: [3.5.4]
 
     env:
