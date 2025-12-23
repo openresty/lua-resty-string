@@ -49,6 +49,7 @@ jobs:
         git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
         git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git
         git clone https://github.com/openresty/mockeagain.git
+        git clone https://github.com/openresty/test-nginx.git
 
     - name: Build and install LuaJIT
       run: |
@@ -84,4 +85,4 @@ jobs:
         export LD_PRELOAD=$PWD/mockeagain/mockeagain.so
         export LD_LIBRARY_PATH=$PWD/mockeagain:$LUAJIT_PREFIX/lib:$LD_LIBRARY_PATH
         export TEST_NGINX_RESOLVER=8.8.4.4
-        prove -r t
+        prove -Itest-nginx/inc -Itest-nginx/lib -r t
