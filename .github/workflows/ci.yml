@@ -17,19 +17,9 @@ jobs:
 
     env:
       JOBS: 3
-      NGX_BUILD_JOBS: ${{ env.JOBS }}
       LUAJIT_PREFIX: /opt/luajit21
-      LUAJIT_LIB: ${{ env.LUAJIT_PREFIX }}/lib
-      LUAJIT_INC: ${{ env.LUAJIT_PREFIX }}/include/luajit-2.1
-      LUA_INCLUDE_DIR: ${{ env.LUAJIT_INC }}
-      LUA_CMODULE_DIR: /lib
       OPENSSL_PREFIX: /usr/local/openresty/openssl3
-      OPENSSL_LIB: ${{ env.OPENSSL_PREFIX }}/lib
-      OPENSSL_INC: ${{ env.OPENSSL_PREFIX }}/include
-      LD_LIBRARY_PATH: ${{ env.LUAJIT_LIB }}:${{ env.LD_LIBRARY_PATH }}
       TEST_NGINX_SLEEP: 0.006
-      NGINX_VERSION: ${{ matrix.nginx-version }}
-      OPENSSL_VER: ${{ matrix.openssl-version }}
 
     steps:
     - name: Checkout code
@@ -38,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y axel wget build-essential
+        sudo apt-get install -y axel wget build-essential cpanminus
         wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
         echo "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list
         sudo apt-get update
@@ -46,12 +36,7 @@ jobs:
 
     - name: Install Perl modules
       run: |
-        cpanm --notest Test::Nginx || true
-        # If cpanm fails, install cpanminus first
-        if [ $? -ne 0 ]; then
-          sudo apt-get install -y cpanminus
-          cpanm --notest Test::Nginx
-        fi
+        cpanm --notest Test::Nginx
 
     - name: Clone dependencies
       run: |
@@ -68,23 +53,24 @@ jobs:
     - name: Build and install LuaJIT
       run: |
         cd luajit2/
-        make -j${{ env.JOBS }} CCDEBUG=-g Q= PREFIX=${{ env.LUAJIT_PREFIX }} CC=gcc XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT'
-        sudo make install PREFIX=${{ env.LUAJIT_PREFIX }}
+        make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=gcc XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT'
+        sudo make install PREFIX=$LUAJIT_PREFIX
         cd ..
 
     - name: Build and install mockeagain
       run: |
-        cd mockeagain/ && make CC=gcc -j${{ env.JOBS }} && cd ..
+        cd mockeagain/ && make CC=gcc -j$JOBS && cd ..
 
     - name: Build and configure nginx
       run: |
         export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
         export LD_PRELOAD=$PWD/mockeagain/mockeagain.so
-        export LD_LIBRARY_PATH=$PWD/mockeagain:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$PWD/mockeagain:$LUAJIT_PREFIX/lib:$LD_LIBRARY_PATH
         export TEST_NGINX_RESOLVER=8.8.4.4
         export NGX_BUILD_CC=gcc
-        wget http://nginx.org/download/nginx-${{ env.NGINX_VERSION }}.tar.gz
-        ngx-build ${{ env.NGINX_VERSION }} --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I${{ env.OPENSSL_INC }}" --with-ld-opt="-L${{ env.OPENSSL_LIB }} -Wl,-rpath,${{ env.OPENSSL_LIB }}" --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-debug
+        export NGX_BUILD_JOBS=$JOBS
+        wget http://nginx.org/download/nginx-${{ matrix.nginx-version }}.tar.gz
+        ngx-build ${{ matrix.nginx-version }} --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_PREFIX/include" --with-ld-opt="-L$OPENSSL_PREFIX/lib -Wl,-rpath,$OPENSSL_PREFIX/lib" --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-debug
         nginx -V
         ldd `which nginx`|grep -E 'luajit|ssl|pcre'
 
@@ -92,6 +78,8 @@ jobs:
       run: |
         export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
         export LD_PRELOAD=$PWD/mockeagain/mockeagain.so
-        export LD_LIBRARY_PATH=$PWD/mockeagain:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$PWD/mockeagain:$LUAJIT_PREFIX/lib:$LD_LIBRARY_PATH
         export TEST_NGINX_RESOLVER=8.8.4.4
+        export LUA_INCLUDE_DIR=$LUAJIT_PREFIX/include/luajit-2.1
+        export LUA_CMODULE_DIR=/lib
         prove -r t
