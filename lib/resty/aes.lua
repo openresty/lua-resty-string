@@ -13,7 +13,7 @@ local setmetatable = setmetatable
 local type = type
 
 
-local _M = { _VERSION = '0.16' }
+local _M = { _VERSION = '0.17' }
 
 local mt = { __index = _M }
 
