@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        nginx-version: [1.31.3]
+        nginx-version: [1.31.4]
 
     env:
       JOBS: 3
